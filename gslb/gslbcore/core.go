@@ -213,9 +213,55 @@ func (c *GslbCore) PopIdFromIP(ip netip.Addr) string {
 func (c *GslbCore) Query(srcIP netip.Addr) []netip.Addr {
 	slog.Info("Query", slog.String("srcIP", srcIP.String()))
 
+	for _, region := range c.regions {
+		// prefixes info
+		slog.Info("region-id", slog.String("region-id", region.info.Id))
+		for _, prefix := range region.info.Prefixes {
+			slog.Info("  prefixes", slog.String("prefix", prefix.String()))
+		}
+		// pop latencies
+
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	// FIXME(student): Implement your own query logic
-	return []netip.Addr{c.cfg.Pops[0].Ip4}
+	// return []netip.Addr{c.cfg.Pops[0].Ip4}
+
+	// 1. ユーザのいるリージョンをロンゲストマッチングで取得
+	defaultRegion := c.regions[0]
+	bestBits := -1
+	var bestRegion RegionState
+
+	for _, region := range c.regions {
+		for _, prefix := range region.info.Prefixes {
+			if prefix.Contains(srcIP) && prefix.Bits() > bestBits {
+				bestBits = prefix.Bits()
+				bestRegion = *region
+			}
+		}
+	}
+
+	if bestBits == -1 {
+		bestRegion = *defaultRegion
+	}
+
+	// 2. そのリージョンから一番近いPoPを探す
+	popIdx := -1
+	minLatency := 100100100.0
+
+	for i, latency := range bestRegion.popLatency {
+		if latency <= minLatency {
+			minLatency = latency
+			popIdx = i
+		}
+	}
+	pop := c.cfg.Pops[popIdx]
+
+	slog.Info("selected pop info", 
+		slog.String("IPv4", pop.Ip4.String()),
+		slog.Float64("Latency", bestRegion.popLatency[popIdx]))
+
+	return []netip.Addr{ pop.Ip4 }
 }
