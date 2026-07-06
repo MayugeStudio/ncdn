@@ -249,7 +249,7 @@ func (c *GslbCore) Query(srcIP netip.Addr) []netip.Addr {
 
 	// 2. そのリージョンから一番近いPoPを探す
 	popIdx := -1
-	minLatency := 100100100.0
+	minLatency := 10001000.0
 
 	for i, latency := range bestRegion.popLatency {
 		if latency <= minLatency {
