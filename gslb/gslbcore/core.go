@@ -259,9 +259,9 @@ func (c *GslbCore) Query(srcIP netip.Addr) []netip.Addr {
 	}
 	pop := c.cfg.Pops[popIdx]
 
-	slog.Info("selected pop info", 
+	slog.Info("selected pop info",
 		slog.String("IPv4", pop.Ip4.String()),
 		slog.Float64("Latency", bestRegion.popLatency[popIdx]))
 
-	return []netip.Addr{ pop.Ip4 }
+	return []netip.Addr{pop.Ip4}
 }
