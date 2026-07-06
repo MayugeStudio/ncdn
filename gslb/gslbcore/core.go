@@ -11,6 +11,8 @@ import (
 	"github.com/yzp0n/ncdn/types"
 )
 
+const defaultLatency = 20000000.0
+
 // FetchPoPStatus is a function that fetches PoP status from a PoP.
 type FetchPoPStatusFunc func(ctx context.Context, ip netip.Addr) (*types.PoPStatus, error)
 
@@ -93,7 +95,7 @@ func New(cfg *Config) *GslbCore {
 		popLatency := make([]float64, len(c.cfg.Pops))
 		for j := range popLatency {
 			// initialize to a large value
-			popLatency[j] = 10000000
+			popLatency[j] = defaultLatency
 		}
 
 		c.regions[i] = &RegionState{
@@ -181,7 +183,7 @@ func (c *GslbCore) UpdateLatency(ctx context.Context) {
 				slog.Error("Failed to measure latency",
 					slog.String("latencyMeasurer", lm.DebugString()),
 					slog.String("error", err.Error()))
-				lat = 20000000 // random long latancy
+				lat = defaultLatency // random long latancy
 			}
 			popLatency[j] = lat
 		}
@@ -219,8 +221,6 @@ func (c *GslbCore) Query(srcIP netip.Addr) []netip.Addr {
 		for _, prefix := range region.info.Prefixes {
 			slog.Info("  prefixes", slog.String("prefix", prefix.String()))
 		}
-		// pop latencies
-
 	}
 
 	c.mu.Lock()
@@ -232,30 +232,34 @@ func (c *GslbCore) Query(srcIP netip.Addr) []netip.Addr {
 	// 1. ユーザのいるリージョンをロンゲストマッチングで取得
 	defaultRegion := c.regions[0]
 	bestBits := -1
-	var bestRegion RegionState
+	var bestRegion *RegionState
 
 	for _, region := range c.regions {
 		for _, prefix := range region.info.Prefixes {
 			if prefix.Contains(srcIP) && prefix.Bits() > bestBits {
 				bestBits = prefix.Bits()
-				bestRegion = *region
+				bestRegion = region
 			}
 		}
 	}
 
 	if bestBits == -1 {
-		bestRegion = *defaultRegion
+		bestRegion = defaultRegion
 	}
 
 	// 2. そのリージョンから一番近いPoPを探す
 	popIdx := -1
-	minLatency := 10001000.0
+	minLatency := defaultLatency
 
 	for i, latency := range bestRegion.popLatency {
-		if latency <= minLatency {
+		if latency < minLatency {
 			minLatency = latency
 			popIdx = i
 		}
+	}
+
+	if popIdx == -1 {
+		return []netip.Addr{ c.cfg.Pops[0].Ip4 }
 	}
 	pop := c.cfg.Pops[popIdx]
 
