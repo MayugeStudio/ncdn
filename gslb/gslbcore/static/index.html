@@ -508,7 +508,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             regionIdToPopup.set(r.id, div);
 
             div.addEventListener('click', (e) => {
-                $('#srcip').value = r.prefices[0].replace('.0/24', '.123');
+                $('#srcip').value = r.prefixes[0].replace('.0/24', '.123');
             });
 
             div.addEventListener('mouseenter', () => {
