@@ -266,8 +266,7 @@ func (c *GslbCore) Query(srcIP netip.Addr) []netip.Addr {
 
 	if bestBits == -1 {
 		pop := c.getMostAveragePop()
-		slog.Info("selected pop info",
-			slog.String("IPv4", pop.Ip4.String()))
+		slog.Info("selected pop info", slog.String("IPv4", pop.Ip4.String()))
 		return []netip.Addr{pop.Ip4}
 	}
 
@@ -284,8 +283,7 @@ func (c *GslbCore) Query(srcIP netip.Addr) []netip.Addr {
 
 	if popIdx == -1 {
 		pop := c.getMostAveragePop()
-		slog.Info("selected pop info",
-			slog.String("IPv4", pop.Ip4.String()))
+		slog.Info("selected pop info", slog.String("IPv4", pop.Ip4.String()))
 		return []netip.Addr{pop.Ip4}
 	}
 	pop := c.cfg.Pops[popIdx]
