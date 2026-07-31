@@ -12,19 +12,20 @@ import (
 // Source: ../c/lb.c
 
 const (
-	DESTINATIONS_SIZE = 255 // ../c/lb.c:66
+	DESTINATIONS_SIZE = 255   // ../c/lb.c:68
+	MAGLEV_TABLE_SIZE = 65537 // ../c/lb.c:69
 )
 
-type StatCounters struct { // ../c/lb.c:28
-	RxPacketTotal                uint64 // ../c/lb.c:29
-	RxTotalSize                  uint64 // ../c/lb.c:30
-	TooShortPacketTotal          uint64 // ../c/lb.c:32
-	NonIpv4PacketTotal           uint64 // ../c/lb.c:33
-	IpOptionPacketTotal          uint64 // ../c/lb.c:34
-	NonSupportedProtoPacketTotal uint64 // ../c/lb.c:35
-	NoVipMatchTotal              uint64 // ../c/lb.c:36
-	FailedAdjustHeadTotal        uint64 // ../c/lb.c:37
-	FailedAdjustTailTotal        uint64 // ../c/lb.c:38
+type StatCounters struct { // ../c/lb.c:26
+	RxPacketTotal                uint64 // ../c/lb.c:27
+	RxTotalSize                  uint64 // ../c/lb.c:28
+	TooShortPacketTotal          uint64 // ../c/lb.c:30
+	NonIpv4PacketTotal           uint64 // ../c/lb.c:31
+	IpOptionPacketTotal          uint64 // ../c/lb.c:32
+	NonSupportedProtoPacketTotal uint64 // ../c/lb.c:33
+	NoVipMatchTotal              uint64 // ../c/lb.c:34
+	FailedAdjustHeadTotal        uint64 // ../c/lb.c:35
+	FailedAdjustTailTotal        uint64 // ../c/lb.c:36
 }
 
 func StatCountersAssertLayout(s *DWARFStruct) error {
