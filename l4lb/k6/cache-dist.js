@@ -3,12 +3,9 @@ import { check, sleep } from 'k6';
 import { Counter } from 'k6/metrics';
 
 const TARGET = __ENV.TARGET || 'http://192.0.2.10:8889/statusz';
-// popcache の -nodeId と合わせる (supervisord.conf を参照)
 const NODES = (__ENV.NODES || 'C0,C1').split(',');
-const SLEEP = Number(__ENV.SLEEP || 0);
+const SLEEP = Number(__ENV.SLEEP || 1);
 
-// カスタムメトリクスは init コンテキストでしか生成できないので、
-// ノード名を先に列挙して Counter を用意しておく
 const hits = {};
 for (const n of NODES) {
   hits[n] = new Counter(`hits_${n}`);
@@ -17,7 +14,7 @@ const hitsUnknown = new Counter('hits_unknown');
 
 export const options = {
   vus: 10,
-  duration: '30s',
+  duration: '10s',
   noConnectionReuse: true,
 };
 
@@ -32,11 +29,10 @@ export default function () {
 
   let id = null;
   try {
-    // /statusz -> {"id":"C0",...} / origin の /json -> {"PopCacheId":"C0",...}
     const body = res.json();
     id = body.id || body.PopCacheId || null;
   } catch (e) {
-    // JSON でなければ無視
+    // JSON でなければ無視する
   }
 
   if (id !== null && hits[id] !== undefined) {
