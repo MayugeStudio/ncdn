@@ -15,6 +15,7 @@
 
 #define ENABLE_XDPCAP
 #include "xdpcap.h"
+#include "jhash.h"
 
 // We use clang built-in memcpy, but need a function signature to provoke it.
 void* memcpy(void*, const void*, unsigned long);
@@ -65,6 +66,7 @@ struct destination_entry {
 } PACKED;
 
 #define DESTINATIONS_SIZE 255 /* go: */
+#define MAGLEV_TABLE_SIZE 65537 /* go: */
 
 // destinations_map is a map that contains the destination_entry for each
 // destination that the load balancer can send packets to.
@@ -77,6 +79,13 @@ struct {
   __type(value, struct destination_entry);
 } destinations_map SEC(".maps");
 
+struct {
+  __uint(type, BPF_MAP_TYPE_ARRAY);
+  __uint(max_entries, (MAGLEV_TABLE_SIZE));
+  __type(key, uint32_t);
+  __type(value, uint32_t);
+} maglev_lookup_table SEC(".maps");
+
 #if DEBUG_LB_MAIN
 #define debugk(fmt, ...) bpf_printk(fmt, ##__VA_ARGS__)
 #else
@@ -84,6 +93,13 @@ struct {
   do {                   \
   } while (0)
 #endif
+
+static __always_inline uint32_t generate_hash_from_flow(uint32_t srcip, uint32_t destip, uint16_t srcport, uint16_t destport, uint8_t proto) {
+  uint32_t a = srcip;
+  uint32_t b = destip;
+  uint32_t c = (srcport << 16) | destport | (proto << 24);
+  return jhash_3words(a, b, c, 0);
+}
 
 SEC("xdp")
 int lb_main(struct xdp_md* ctx) {
@@ -150,12 +166,18 @@ int lb_main(struct xdp_md* ctx) {
 
   struct tcphdr* tcp = (struct tcphdr*)(ip + 1);
 
-  uint32_t key = ip->saddr + tcp->source;
   debugk("incoming packet: ip=%pI4 port=%u", &ip->saddr, ntohs(tcp->source));
 
-  uint32_t dest_idx = (key % config->num_dests) + 1;
-  debugk("dest_idx=%d", dest_idx);
-  struct destination_entry* dest = bpf_map_lookup_elem(&destinations_map, &dest_idx);
+  uint32_t key = generate_hash_from_flow(ip->saddr, ip->daddr, tcp->source, tcp->dest, ip->protocol) % MAGLEV_TABLE_SIZE;
+  
+  uint32_t *dest_idx = bpf_map_lookup_elem(&maglev_lookup_table, &key);
+
+  if (!dest_idx) {
+    bpf_printk("ASSERTION FAILURE: invalid destination index: %d", dest_idx);
+    EXIT(XDP_DROP);
+  }
+  debugk("dest_idx=%d", *dest_idx);
+  struct destination_entry* dest = bpf_map_lookup_elem(&destinations_map, dest_idx);
   if (!dest) {
     bpf_printk("ASSERTION FAILURE: no dest entry for %d", dest_idx);
     EXIT(XDP_DROP);

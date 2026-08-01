@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/cilium/ebpf"
+	"github.com/dchest/siphash"
 	"github.com/vishvananda/netlink"
 	"go.uber.org/multierr"
 )
@@ -21,7 +22,7 @@ type Config struct {
 	XdpCapHookPath string
 
 	VIP   netip.Addr
-	Dests DestinationEntries
+	Dests DestinationEntries // ルックアップテーブルのサイズ
 }
 
 type L4LB struct {
@@ -29,6 +30,10 @@ type L4LB struct {
 
 	bindings     *Bindings
 	linkAttacher *LinkAttacher
+
+	// Maglev
+	offsets []uint32 // ルックアップテーブルを生成するためのoffset (len N)
+	skips   []uint32 // ルックアップテーブルを生成するためのskips (len N)
 }
 
 func New(cfg *Config) (*L4LB, error) {
@@ -56,6 +61,16 @@ func New(cfg *Config) (*L4LB, error) {
 		bindings: bindings,
 	}
 
+	// LookupTable生成に必要なoffsetsとskipsを計算
+	lb.generateOffsetsAndSkips()
+	slog.Info("generateOffsetsAndSkips finished")
+
+	err = lb.PopulateLookupTable()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to populate lookup-table: %w", err)
+	}
+	slog.Info("PopulateLookupTable finished")
+
 	var link netlink.Link
 	if cfg.InterfaceName == "" {
 		slog.Info("No interface name provided, skipping link attachment.")
@@ -80,7 +95,72 @@ func New(cfg *Config) (*L4LB, error) {
 	return lb, nil
 }
 
+func (lb *L4LB) generateOffsetsAndSkips() {
+	lb.offsets = make([]uint32, len(lb.cfg.Dests))
+	lb.skips = make([]uint32, len(lb.cfg.Dests))
+
+	for i, dest := range lb.cfg.Dests {
+		h := siphash.Hash(0xdeadbeef, 0, []byte(dest.IPAddr.String()))
+		lb.offsets[i] = uint32(h>>32) % MAGLEV_TABLE_SIZE
+		lb.skips[i] = uint32(h&0xffffffff)%(MAGLEV_TABLE_SIZE-1) + 1
+	}
+}
+
 var hostOrder = binary.LittleEndian
+
+// ルックアップテーブルを計算して生成する関数
+func (lb *L4LB) PopulateLookupTable() error {
+	table := make([]int, MAGLEV_TABLE_SIZE)
+	tableIndices := make([]uint32, MAGLEV_TABLE_SIZE)
+	for i := range tableIndices {
+		tableIndices[i] = uint32(i)
+	}
+	for j := range table {
+		table[j] = -1
+	}
+
+	var n uint32 = 0
+	for {
+		// for each backends
+		for i := 1; i < len(lb.cfg.Dests); i++ {
+			// if _, exists := p.dead[i]; exists {
+			// 	continue
+			// }
+
+			c := lb.nextOffset(i)
+			for table[c] >= 0 {
+				c = lb.nextOffset(i)
+			}
+
+			table[c] = i
+			n++
+			if n == MAGLEV_TABLE_SIZE {
+				// intをuint32に詰め替え
+				values := make([]uint32, len(table))
+				for i := range table {
+					values[i] = uint32(table[i])
+				}
+				for i, v := range values {
+					if err := lb.bindings.MaglevLookupTable.Put(uint32(i), v); err != nil {
+						return fmt.Errorf("maglev put %d: %w", i, err)
+					}
+				}
+				return nil
+			}
+		}
+	}
+}
+
+// 次のオフセットを計算する
+func (lb *L4LB) nextOffset(i int) uint32 {
+	res := lb.offsets[i]
+
+	lb.offsets[i] += lb.skips[i]
+	if lb.offsets[i] >= MAGLEV_TABLE_SIZE {
+		lb.offsets[i] -= MAGLEV_TABLE_SIZE
+	}
+	return res
+}
 
 func IPToUint32(ip netip.Addr) (uint32, error) {
 	if !ip.Is4() {
@@ -119,6 +199,10 @@ func (lb *L4LB) Sync() error {
 }
 
 func (lb *L4LB) Close() error {
+	err := lb.linkAttacher.Close()
+	if err != nil {
+		return err
+	}
 	return lb.bindings.Close()
 }
 
