@@ -3,7 +3,7 @@ import { check, sleep } from 'k6';
 import { Counter } from 'k6/metrics';
 
 const TARGET = __ENV.TARGET || 'http://192.0.2.10:8889/statusz';
-const NODES = (__ENV.NODES || 'C0,C1').split(',');
+const NODES = (__ENV.NODES || 'C0,C1,C2,C3,C4').split(',');
 const SLEEP = Number(__ENV.SLEEP || 1);
 
 const hits = {};
@@ -14,7 +14,7 @@ const hitsUnknown = new Counter('hits_unknown');
 
 export const options = {
   vus: 10,
-  duration: '10s',
+  duration: '5m',
   noConnectionReuse: true,
 };
 
