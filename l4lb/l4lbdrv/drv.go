@@ -9,6 +9,9 @@ import (
 	"net/netip"
 	"path/filepath"
 	"syscall"
+	"sync"
+	"time"
+	"net/http"
 
 	"github.com/cilium/ebpf"
 	"github.com/dchest/siphash"
@@ -23,6 +26,8 @@ type Config struct {
 
 	VIP   netip.Addr
 	Dests DestinationEntries // ルックアップテーブルのサイズ
+
+	HealthCheckEndpoint string
 }
 
 type L4LB struct {
@@ -30,6 +35,8 @@ type L4LB struct {
 
 	bindings     *Bindings
 	linkAttacher *LinkAttacher
+
+	deadDests  []bool // true -> dead, false -> alive
 
 	// Maglev
 	offsets []uint32 // ルックアップテーブルを生成するためのoffset (len N)
@@ -61,9 +68,10 @@ func New(cfg *Config) (*L4LB, error) {
 		bindings: bindings,
 	}
 
-	// LookupTable生成に必要なoffsetsとskipsを計算
-	lb.generateOffsetsAndSkips()
-	slog.Info("generateOffsetsAndSkips finished")
+	lb.deadDests = make([]bool, len(lb.cfg.Dests));
+	for i := range lb.deadDests {
+		lb.deadDests[i] = false
+	}
 
 	err = lb.PopulateLookupTable()
 	if err != nil {
@@ -110,6 +118,9 @@ var hostOrder = binary.LittleEndian
 
 // ルックアップテーブルを計算して生成する関数
 func (lb *L4LB) PopulateLookupTable() error {
+	// LookupTable生成に必要なoffsetsとskipsを計算
+	lb.generateOffsetsAndSkips()
+
 	table := make([]int, MAGLEV_TABLE_SIZE)
 	tableIndices := make([]uint32, MAGLEV_TABLE_SIZE)
 	for i := range tableIndices {
@@ -119,13 +130,24 @@ func (lb *L4LB) PopulateLookupTable() error {
 		table[j] = -1
 	}
 
+	// 全員死んでいたら、何もできないので何もしない
+	deadDestsCount := 0
+	for i := range lb.deadDests {
+		if lb.deadDests[i] {
+			deadDestsCount += 1
+		}
+	}
+	if deadDestsCount == len(lb.deadDests) {
+		return nil
+	}
+
 	var n uint32 = 0
 	for {
 		// for each backends
 		for i := 1; i < len(lb.cfg.Dests); i++ {
-			// if _, exists := p.dead[i]; exists {
-			// 	continue
-			// }
+			if lb.deadDests[i] {
+				continue
+			}
 
 			c := lb.nextOffset(i)
 			for table[c] >= 0 {
@@ -160,6 +182,59 @@ func (lb *L4LB) nextOffset(i int) uint32 {
 		lb.offsets[i] -= MAGLEV_TABLE_SIZE
 	}
 	return res
+}
+
+func (lb *L4LB) HealthCheck(dest DestinationEntry) bool {
+	url := "http://" + dest.IPAddr.String() + lb.cfg.HealthCheckEndpoint
+	c := &http.Client {
+		Timeout: 500 * time.Millisecond,
+	}
+	// slog.Info("healthchecking at ", slog.String("url", url))
+	resp, err := c.Get(url)
+	if err != nil {
+		// TODO: Logging
+		return false
+	}
+
+	isSuccess := resp.StatusCode == http.StatusOK
+	if !isSuccess {
+		// TODO: Logging
+		return false
+	}
+	return true
+}
+
+func (lb *L4LB) HealthCheckAll() bool {
+	wg := &sync.WaitGroup{}
+	var changed []int
+
+	// slog.Info("Do health check...")
+
+	wg.Add(len(lb.cfg.Dests)-1)
+	for i, dest := range lb.cfg.Dests {
+		if i == 0 { // Dests[0] = l4lb itself
+			continue
+		}
+		go func() {
+			defer wg.Done()
+			ok := lb.HealthCheck(dest)
+			if !ok && !lb.deadDests[i] { // 新しく倒れた場合
+				lb.deadDests[i] = true
+				slog.Info("Become dead: ", slog.Int("index", i))
+				changed = append(changed, i)
+			} else if ok && lb.deadDests[i] { // 生き返った場合
+				lb.deadDests[i] = false
+				slog.Info("Become alive: ", slog.Int("index", i))
+				changed = append(changed, i)
+			}
+		}()
+	}
+	wg.Wait()
+	if len(changed) > 0 {
+		return true
+	} else {
+		return false
+	}
 }
 
 func IPToUint32(ip netip.Addr) (uint32, error) {
