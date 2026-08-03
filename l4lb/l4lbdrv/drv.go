@@ -137,7 +137,7 @@ func (lb *L4LB) PopulateLookupTable() error {
 			deadDestsCount += 1
 		}
 	}
-	if deadDestsCount == len(lb.deadDests) {
+	if deadDestsCount == len(lb.deadDests) + 1{ // +1はL4LB自身
 		return nil
 	}
 
