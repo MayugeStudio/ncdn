@@ -24,7 +24,7 @@ type requestInfo struct {
 func dumpRequestInfo(r *http.Request) requestInfo {
 	return requestInfo{
 		RemoteAddr: r.RemoteAddr,
-		PopCacheId: r.Header.Get("X-NCDN-PoPCahe-NodeId"),
+		PopCacheId: r.Header.Get("X-NCDN-PoPCache-NodeId"),
 		OriginId:   *nodeId,
 	}
 }
