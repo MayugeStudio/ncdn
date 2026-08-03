@@ -1,0 +1,2 @@
+devcontainer up --workspace-folder .
+
