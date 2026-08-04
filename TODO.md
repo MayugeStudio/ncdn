@@ -6,8 +6,7 @@
 
 # L7LB系
 
-- [ ] L7LBにVarnishを使用する
-- [ ] L7LBにメモリキャッシュを実装する
+- [x] L7LBにメモリキャッシュを実装する
 - [ ] マルチテナント対応 (Host -> origin)
 - [ ] TLS終端とSNIによる証明書切り替え
 - [ ] Originの冗長化
@@ -22,3 +21,6 @@
 - [ ] 別セグメントへIPIPパケットでカプセル化できるように
 - [ ] Originの登録がしやすいようにWebUIを導入
 
+# MEMO
+
+- [ ] Azure Front Door
