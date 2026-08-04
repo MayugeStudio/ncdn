@@ -118,6 +118,17 @@ var hostOrder = binary.LittleEndian
 
 // ルックアップテーブルを計算して生成する関数
 func (lb *L4LB) PopulateLookupTable() error {
+	aliveDestsCount := 0
+	for i := 1; i < len(lb.deadDests); i++ {
+		if !lb.deadDests[i] {
+			aliveDestsCount += 1
+		}
+	}
+	if aliveDestsCount == 0 {
+		slog.Warn("All destinations are dead. Keeping the current lookup table.")
+		return nil
+	}
+
 	// LookupTable生成に必要なoffsetsとskipsを計算
 	lb.generateOffsetsAndSkips()
 
@@ -128,17 +139,6 @@ func (lb *L4LB) PopulateLookupTable() error {
 	}
 	for j := range table {
 		table[j] = -1
-	}
-
-	// 全員死んでいたら、何もできないので何もしない
-	deadDestsCount := 0
-	for i := range lb.deadDests {
-		if lb.deadDests[i] {
-			deadDestsCount += 1
-		}
-	}
-	if deadDestsCount == len(lb.deadDests) + 1{ // +1はL4LB自身
-		return nil
 	}
 
 	var n uint32 = 0

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"flag"
@@ -23,8 +24,26 @@ var originURLStr = flag.String("originURL", "http://localhost:8888", "Origin ser
 var listenAddr = flag.String("listenAddr", ":8889", "Address to listen on")
 var nodeId = flag.String("nodeId", "unknown_node", "Name of the node")
 
-type cacheEntry struct {
-	Body string
+type CacheEntry struct {
+	StatusCode int
+	Header     http.Header
+	Body       string
+}
+
+type cacheRecorder struct {
+	http.ResponseWriter
+	status int
+	buf    bytes.Buffer
+}
+
+func (c *cacheRecorder) WriteHeader(code int) {
+	c.status = code
+	c.ResponseWriter.WriteHeader(code)
+}
+
+func (c *cacheRecorder) Write(b []byte) (int, error) {
+	c.buf.Write(b)
+	return c.ResponseWriter.Write(b)
 }
 
 // cacheの識別に使用するためのキーを生成する
@@ -44,16 +63,43 @@ func GenerateCacheKey(host string, path string, queries url.Values) [32]byte {
 	return hashValue
 }
 
-// キャッシュをチェックして、存在していればそれをボディに書き込んで返却するミドルウェア
-func checkCache(next http.Handler, cache *lru.Cache[[32]byte, *cacheEntry]) http.Handler {
+// キャッシュが存在すれば返却、存在しなければ取りに行くミドルウェア
+func withCache(next http.Handler, cache *lru.Cache[[32]byte, *CacheEntry]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cacheKey := GenerateCacheKey(r.Host, r.URL.Path, r.URL.Query())
 
-		if cacheEntry, ok := cache.Get(cacheKey); ok {
-			io.WriteString(w, cacheEntry.Body)
+		w.Header().Set("X-NCDN-PoPCache-NodeId", *nodeId)
+
+		// キャッシュヒット
+		if ce, ok := cache.Get(cacheKey); ok {
+			log.Println("Cache Hit !!!")
+			for k, vs := range ce.Header {
+				for _, v := range vs {
+					w.Header().Add(k, v)
+				}
+			}
+			w.Header().Add("X-Cache", "Hit")
+			w.WriteHeader(ce.StatusCode)
+			io.WriteString(w, ce.Body)
 			return
 		}
-		next.ServeHTTP(w, r)
+
+		// キャッシュミス
+		log.Println("Cache Miss !!!")
+		w.Header().Add("X-Cache", "Miss")
+		rec := &cacheRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rec, r)
+
+		if rec.status == http.StatusOK {
+			h := w.Header().Clone()
+			h.Del("X-Cache")
+			h.Del("X-NCDN-PoPCache-NodeId")
+			cache.Add(cacheKey, &CacheEntry{
+				StatusCode: rec.status,
+				Header:     h,
+				Body:       rec.buf.String(),
+			})
+		}
 	})
 }
 
@@ -65,7 +111,7 @@ func main() {
 		log.Fatalf("Failed to parse origin URL %q: %v", *originURLStr, err)
 	}
 
-	cache, err := lru.New[[32]byte, *cacheEntry](256)
+	cache, err := lru.New[[32]byte, *CacheEntry](256)
 	if err != nil {
 		log.Fatalf("Failed to create lru.Cache: %v", err)
 	}
@@ -100,19 +146,15 @@ func main() {
 	})
 
 	rp := &httputil.ReverseProxy{
-		// FIXME: actually cache stuff...
 		Rewrite: func(r *httputil.ProxyRequest) {
 			r.SetXForwarded()
 			r.Out.Header.Set("X-NCDN-PoPCache-NodeId", *nodeId)
 			r.SetURL(originURL)
 			log.Printf("%s -> %s\n", r.In.Host, r.Out.Host)
 		},
-		ModifyResponse: func(r *http.Response) error {
-			return nil
-		},
 	}
 
-	mux.Handle("/", checkCache(rp, cache))
+	mux.Handle("/", withCache(rp, cache))
 
 	log.Printf("Listening on %s...", *listenAddr)
 	if err := http.ListenAndServe(*listenAddr, nil); err != nil {
