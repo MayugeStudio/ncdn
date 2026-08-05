@@ -1,0 +1,79 @@
+.grid {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.grid li {
+  min-height: 200px;
+  justify-content: center;
+}
+
+.grid img {
+  max-height: 130px;
+}
+
+.grid .caption em {
+  font-style: normal;
+  font-size: 0.65rem;
+  color: var(--accent);
+}
+
+.hint {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.85rem;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  font-size: 0.82rem;
+}
+
+.probes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.probes button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.probes button:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.probe-log {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.probe-log th,
+.probe-log td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.probe-log th {
+  font-size: 0.7rem;
+  color: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.probe-log .state.is-hit {
+  color: #047857;
+  font-weight: 700;
+}
+
+.probe-log .state.is-miss {
+  color: #b45309;
+  font-weight: 700;
+}

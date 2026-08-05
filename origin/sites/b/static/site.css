@@ -1,0 +1,44 @@
+.grid {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.6rem;
+}
+
+.grid li {
+  min-height: 190px;
+  padding: 0.6rem 0.35rem;
+  justify-content: space-between;
+}
+
+.grid img {
+  max-height: 110px;
+}
+
+.sizes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.sizes a {
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-size: 0.62rem;
+  text-decoration: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.sizes a:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.hint {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.85rem;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  font-size: 0.82rem;
+}

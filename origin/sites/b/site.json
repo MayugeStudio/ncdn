@@ -1,7 +1,11 @@
 {
   "id": "b",
   "name": "ビズストック",
+<<<<<<< HEAD
   "tagline": "80枚を4サイズ・4ページで配信する大きめのカタログ。",
+=======
+  "tagline": "80枚を4サイズ・4ページで配信する大きめのカタログ。ユニークURLがPoPCacheのLRU容量(256)を超えるので、eviction が起きてヒット率が頭打ちになる。",
+>>>>>>> 796f27f (feat: 複数originに対応)
   "host": "b.ncdn.test",
   "profile": "catalog",
   "accent": "#1d4ed8",
