@@ -1,0 +1,15 @@
+{
+  "id": "c",
+  "name": "シーズンボード",
+  "tagline": "クエリ付きサムネイルと非キャッシュ対象のエンドポイントを混ぜた実験用サイト。",
+  "host": "c.ncdn.test",
+  "profile": "dynamic",
+  "accent": "#047857",
+  "ink": "#052e16",
+  "paper": "#f4fbf6",
+  "perPage": 0,
+  "variants": [
+    { "name": "full", "width": 0, "label": "原寸" }
+  ],
+  "allowedWidths": [96, 160, 240, 360, 480]
+}

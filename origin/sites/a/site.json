@@ -1,0 +1,14 @@
+{
+  "id": "a",
+  "name": "ソコスト・ポートレート",
+  "tagline": "人物イラストを1ページにまとめただけのサイト。",
+  "host": "a.ncdn.test",
+  "profile": "gallery",
+  "accent": "#c2410c",
+  "ink": "#1c1917",
+  "paper": "#fffbf5",
+  "perPage": 0,
+  "variants": [
+    { "name": "full", "width": 0, "label": "原寸" }
+  ]
+}
