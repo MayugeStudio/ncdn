@@ -20,6 +20,3 @@
 - [ ] OriginInfoを知っている中央サーバを準備
 - [ ] Originの登録がしやすいようにWebUIを導入
 
-# MEMO
-
-- [ ] Azure Front Door
