@@ -5,5 +5,3 @@ secrets/
 *.pcap
 *.drawio
 *.bkp
-origin/sites/*/static/img/
-origin/sites/*/images.json

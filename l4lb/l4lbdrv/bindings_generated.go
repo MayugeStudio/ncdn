@@ -12,8 +12,8 @@ import (
 // Source: ../c/lb.c
 
 const (
-	DESTINATIONS_SIZE = 255   // ../c/lb.c:68
-	MAGLEV_TABLE_SIZE = 65537 // ../c/lb.c:69
+	DESTINATIONS_SIZE = 255   // ../c/lb.c:69
+	MAGLEV_TABLE_SIZE = 65537 // ../c/lb.c:70
 )
 
 type StatCounters struct { // ../c/lb.c:26
@@ -26,6 +26,7 @@ type StatCounters struct { // ../c/lb.c:26
 	NoVipMatchTotal              uint64 // ../c/lb.c:34
 	FailedAdjustHeadTotal        uint64 // ../c/lb.c:35
 	FailedAdjustTailTotal        uint64 // ../c/lb.c:36
+	IcmpPacketTotal              uint64 // ../c/lb.c:37
 }
 
 func StatCountersAssertLayout(s *DWARFStruct) error {
@@ -87,6 +88,11 @@ func StatCountersAssertLayout(s *DWARFStruct) error {
 	if goff != uintptr(doff) {
 		return fmt.Errorf("offset mismatch: go FailedAdjustTailTotal: %d, dwarf failed_adjust_tail_total: %d", goff, doff)
 	}
+	goff = unsafe.Offsetof(StatCounters{}.IcmpPacketTotal)
+	doff = fs["icmp_packet_total"].Offset
+	if goff != uintptr(doff) {
+		return fmt.Errorf("offset mismatch: go IcmpPacketTotal: %d, dwarf icmp_packet_total: %d", goff, doff)
+	}
 
 	return nil
 }
@@ -101,6 +107,7 @@ func (c *StatCounters) Add(other *StatCounters) {
 	c.NoVipMatchTotal += other.NoVipMatchTotal
 	c.FailedAdjustHeadTotal += other.FailedAdjustHeadTotal
 	c.FailedAdjustTailTotal += other.FailedAdjustTailTotal
+	c.IcmpPacketTotal += other.IcmpPacketTotal
 }
 
 func (c *StatCounters) String() string {
@@ -133,6 +140,9 @@ func (c *StatCounters) String() string {
 	if c.FailedAdjustTailTotal != 0 {
 		buf.WriteString(fmt.Sprintf("FailedAdjustTailTotal=%d, ", c.FailedAdjustTailTotal))
 	}
+	if c.IcmpPacketTotal != 0 {
+		buf.WriteString(fmt.Sprintf("IcmpPacketTotal=%d, ", c.IcmpPacketTotal))
+	}
 	if strings.HasSuffix(buf.String(), ", ") {
 		buf.Truncate(buf.Len() - 2)
 	}
@@ -140,9 +150,9 @@ func (c *StatCounters) String() string {
 	return buf.String()
 }
 
-type LbConfig struct { // ../c/lb.c:49
-	VipAddress uint32 // ../c/lb.c:50
-	NumDests   uint32 // ../c/lb.c:51
+type LbConfig struct { // ../c/lb.c:50
+	VipAddress uint32 // ../c/lb.c:51
+	NumDests   uint32 // ../c/lb.c:52
 }
 
 func LbConfigAssertLayout(s *DWARFStruct) error {
