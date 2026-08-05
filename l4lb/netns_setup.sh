@@ -67,9 +67,7 @@ add_ns C1 "192.168.88.11/24"
 add_ns C2 "192.168.88.12/24"
 add_ns C3 "192.168.88.13/24"
 add_ns C4 "192.168.88.14/24"
-add_ns O0 "192.168.88.30/24"
-add_ns O1 "192.168.88.31/24"
-add_ns O2 "192.168.88.32/24"
+add_ns O "192.168.88.30/24"
 
 # Host <-> br-Dev
 ip l del H-net0
@@ -120,9 +118,7 @@ ip -n C1 r add default via 192.168.88.1
 ip -n C2 r add default via 192.168.88.1
 ip -n C3 r add default via 192.168.88.1
 ip -n C4 r add default via 192.168.88.1
-# ip netns exec O0 ip r add default via 192.168.88.1
-# ip netns exec O1 ip r add default via 192.168.88.1
-# ip netns exec O2 ip r add default via 192.168.88.1
+# ip netns exec O ip r add default via 192.168.88.1
 
 # LB->C0 ipip tunnel - claim VIP
 ip -n C0 tunnel a ipip0 remote 192.168.88.20 local 192.168.88.10 dev net0

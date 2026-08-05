@@ -8,15 +8,12 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/yzp0n/ncdn/httprps"
 )
 
 var nodeId = flag.String("nodeId", "unknown_node", "Name of the node")
 var listenAddr = flag.String("listenAddr", ":8888", "Address to listen on")
-var siteDir = flag.String("siteDir", ".", "Directory of the site to serve (must contain site.json). Defaults to the legacy single-page origin.")
 
 type requestInfo struct {
 	RemoteAddr string
@@ -87,9 +84,12 @@ func serveJson(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func registerLegacyRoutes(mux *http.ServeMux) {
+func main() {
+	flag.Parse()
+
 	fs := http.FileServer(http.Dir("./static"))
 
+	mux := http.NewServeMux()
 	mux.HandleFunc("/index.html", serveIndexHTML)
 	mux.HandleFunc("/json", serveJson)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -101,24 +101,6 @@ func registerLegacyRoutes(mux *http.ServeMux) {
 
 		fs.ServeHTTP(w, r)
 	})
-}
-
-func main() {
-	flag.Parse()
-
-	mux := http.NewServeMux()
-
-	if _, err := os.Stat(filepath.Join(*siteDir, "site.json")); err == nil {
-		s, err := loadSite(*siteDir)
-		if err != nil {
-			log.Fatalf("サイトの読み込みに失敗しました: %v", err)
-		}
-		s.logSummary()
-		registerSiteRoutes(mux, s)
-	} else {
-		log.Printf("%s に site.json が無いため、従来の単一ページ origin として起動します", *siteDir)
-		registerLegacyRoutes(mux)
-	}
 
 	rps := httprps.NewMiddleware(mux)
 	http.Handle("/", rps)

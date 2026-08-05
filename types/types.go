@@ -1,9 +1,6 @@
 package types
 
-import (
-	"net/netip"
-	"net/url"
-)
+import "net/netip"
 
 type PoPInfo struct {
 	// The PoP identifier for convenience
@@ -55,12 +52,3 @@ type ProbeResult struct {
 	ResponseEnd  int64  `json:"response_end"`
 	ResponseCode int    `json:"response_code"`
 }
-
-type OriginInfo struct {
-	// Id   string  `json:"id"`
-	Ip4      netip.Addr
-	Hostname string
-	Port     string
-	Url      *url.URL
-}
-
