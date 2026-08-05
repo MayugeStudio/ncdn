@@ -1,0 +1,16 @@
+.grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.grid li {
+  min-height: 220px;
+  justify-content: center;
+}
+
+.grid img {
+  max-height: 160px;
+}
+
+.site-head h1 {
+  font-weight: 800;
+}
