@@ -1,0 +1,54 @@
+{{ define "index" }}<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ .Heading }}</title>
+<link rel="stylesheet" href="/ncdn-base.css">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+:root {
+  --accent: {{ .Site.Accent }};
+  --ink: {{ .Site.Ink }};
+  --paper: {{ .Site.Paper }};
+}
+</style>
+<script src="/ncdn-cachemeter.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+<header class="site-head">
+  <h1>{{ .Site.Name }} <span class="badge">HOT SET</span></h1>
+  <p class="tagline">{{ .Site.Tagline }}</p>
+  <div class="nodebar">
+    <span>origin <b>{{ .Node.OriginId }}</b></span>
+    <span>popcache <b>{{ if .Node.PopCacheId }}{{ .Node.PopCacheId }}{{ else }}(直接アクセス){{ end }}</b></span>
+    <span>client <b>{{ .Node.RemoteAddr }}</b></span>
+    <span>画像 <b>{{ .Stats.ImageCount }}</b> 枚</span>
+    <span>ユニークURL <b>{{ .Stats.UniqueURLs }}</b></span>
+  </div>
+</header>
+
+<section class="meter">
+  <h2>キャッシュヒット率</h2>
+  <div data-cachemeter data-targets="{{ .MeterURLs }}"></div>
+</section>
+
+<ul class="grid">
+{{ range .Images }}
+  <li>
+    <img src="/img/{{ .File }}" alt="{{ .Title }}" width="160" loading="lazy">
+    <span class="caption">{{ .Title }}</span>
+  </li>
+{{ end }}
+</ul>
+
+<footer class="site-foot">
+  <p>イラスト: <a href="https://soco-st.com/">ソコスト</a>（商用可・クレジット表記不要）。ncdn の動作確認用デモサイトです。</p>
+</footer>
+
+</div>
+</body>
+</html>
+{{ end }}
