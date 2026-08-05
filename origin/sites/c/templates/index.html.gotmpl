@@ -1,0 +1,74 @@
+{{ define "index" }}<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ .Heading }}</title>
+<link rel="stylesheet" href="/ncdn-base.css">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+:root {
+  --accent: {{ .Site.Accent }};
+  --ink: {{ .Site.Ink }};
+  --paper: {{ .Site.Paper }};
+}
+</style>
+<script src="/ncdn-cachemeter.js" defer></script>
+<script src="/assets/site.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+<header class="site-head">
+  <h1>{{ .Site.Name }} <span class="badge">DYNAMIC</span></h1>
+  <p class="tagline">{{ .Site.Tagline }}</p>
+  <div class="nodebar">
+    <span>origin <b>{{ .Node.OriginId }}</b></span>
+    <span>popcache <b>{{ if .Node.PopCacheId }}{{ .Node.PopCacheId }}{{ else }}(直接アクセス){{ end }}</b></span>
+    <span>client <b>{{ .Node.RemoteAddr }}</b></span>
+    <span>画像 <b>{{ .Stats.ImageCount }}</b> 枚</span>
+    <span>ユニークURL <b>{{ .Stats.UniqueURLs }}</b></span>
+  </div>
+</header>
+
+<section class="meter">
+  <h2>キャッシュヒット率</h2>
+  <p class="hint">同じ画像でも <code>?w=</code> が違えば別のキャッシュキーになる。原寸 + {{ len .Site.AllowedWidths }} 段階の幅で、実画像 {{ .Stats.ImageCount }} 枚から {{ .Stats.UniqueURLs }} 本のURLが生える。</p>
+  <div data-cachemeter data-targets="{{ .MeterURLs }}"></div>
+</section>
+
+<section class="meter">
+  <h2>キャッシュキーと Cache-Control の確認</h2>
+  <div class="probes">
+    <button type="button" data-probe="/img/{{ (index .Images 0).File }}?w=240&amp;fmt=png">クエリ順 A: <code>?w=240&amp;fmt=png</code></button>
+    <button type="button" data-probe="/img/{{ (index .Images 0).File }}?fmt=png&amp;w=240">クエリ順 B: <code>?fmt=png&amp;w=240</code></button>
+    <button type="button" data-probe="/api/random">ランダム画像API <code>Cache-Control: no-store</code></button>
+    <button type="button" data-probe="/live/now">現在時刻 <code>Cache-Control: no-store</code></button>
+  </div>
+  <table class="probe-log">
+    <thead><tr><th>URL</th><th>X-Cache</th><th>PoP</th><th>本文の先頭</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <p class="cm-note">クエリの順番が違うだけの A と B が同じ挙動になれば、キャッシュキーの正規化が効いている。no-store のエンドポイントが Hit になる場合は、PoPCache が Cache-Control を見ていないということ。</p>
+</section>
+
+<ul class="grid">
+{{ range .Images }}
+  {{ $file := .File }}
+  <li>
+    <img src="/img/{{ $file }}?w=240" alt="{{ .Title }}" width="140" loading="lazy"
+         srcset="{{ range $i, $w := $.Site.AllowedWidths }}{{ if $i }}, {{ end }}/img/{{ $file }}?w={{ $w }} {{ $w }}w{{ end }}"
+         sizes="140px">
+    <span class="caption">{{ .Title }}<br><em>{{ .Category }}</em></span>
+  </li>
+{{ end }}
+</ul>
+
+<footer class="site-foot">
+  <p>イラスト: <a href="https://soco-st.com/">ソコスト</a>（商用可・クレジット表記不要）。ncdn の動作確認用デモサイトです。</p>
+</footer>
+
+</div>
+</body>
+</html>
+{{ end }}

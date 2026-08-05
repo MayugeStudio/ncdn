@@ -1,0 +1,17 @@
+{
+  "id": "b",
+  "name": "ビズストック",
+  "tagline": "80枚を4サイズ・4ページで配信する大きめのカタログ。ユニークURLがPoPCacheのLRU容量(256)を超えるので、eviction が起きてヒット率が頭打ちになる。",
+  "host": "b.ncdn.test",
+  "profile": "catalog",
+  "accent": "#1d4ed8",
+  "ink": "#0f172a",
+  "paper": "#f8fafc",
+  "perPage": 20,
+  "variants": [
+    { "name": "thumb", "width": 96, "label": "サムネ (96px)" },
+    { "name": "card", "width": 192, "label": "カード (192px)" },
+    { "name": "medium", "width": 320, "label": "中 (320px)" },
+    { "name": "full", "width": 0, "label": "原寸" }
+  ]
+}
