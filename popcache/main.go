@@ -140,8 +140,8 @@ func NewCacheServer(origins []types.Origin, shields []types.Shield, transport *h
 }
 
 // 指定したhostname, portのサーバにHTTPリクエストを送る。その際、ヘッダを引き継ぐ
-func (c *CacheServer) fetch(ctx context.Context, r *http.Request, hostname string, port string) (*http.Response, error) {
-	url := "http://" + hostname + ":" + port + r.RequestURI
+func (c *CacheServer) fetch(ctx context.Context, r *http.Request, ip4 netip.Addr, port string) (*http.Response, error) {
+	url := "http://" + ip4.String() + ":" + port + r.RequestURI
 	out, err := http.NewRequestWithContext(ctx, r.Method, url, nil) // GETしか対応しないので、Bodyはセットしない
 
 	if err != nil {
@@ -198,7 +198,7 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// shieldに取りに行く場合もX-CacheはMissとしておく
 	w.Header().Add("X-Cache", "Miss")
 
-	res, err := c.fetch(r.Context(), r, shield.Hostname, shield.Port)
+	res, err := c.fetch(r.Context(), r, shield.Ip4, shield.Port)
 	if err != nil {
 		// shieldにフェッチできなかった時の対策を考える
 		// 1. originにフェールオーバ
