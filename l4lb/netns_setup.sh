@@ -70,6 +70,8 @@ add_ns C4 "192.168.88.14/24"
 add_ns O0 "192.168.88.30/24"
 add_ns O1 "192.168.88.31/24"
 add_ns O2 "192.168.88.32/24"
+add_ns S0 "192.168.88.40/24" # TODO: 別のL3ドメインに移動
+add_ns S1 "192.168.88.41/24" # TODO: 別のL3ドメインに移動
 
 # Host <-> br-Dev
 ip l del H-net0
@@ -123,6 +125,8 @@ ip -n C4 r add default via 192.168.88.1
 # ip netns exec O0 ip r add default via 192.168.88.1
 # ip netns exec O1 ip r add default via 192.168.88.1
 # ip netns exec O2 ip r add default via 192.168.88.1
+# ip netns exec S0 ip r add default via 192.168.88.1
+# ip netns exec S1 ip r add default via 192.168.88.1
 
 # LB->C0 ipip tunnel - claim VIP
 ip -n C0 tunnel a ipip0 remote 192.168.88.20 local 192.168.88.10 dev net0

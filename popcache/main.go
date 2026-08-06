@@ -110,8 +110,8 @@ type cacheEntry struct {
 
 type CacheServer struct {
 	cache *lru.Cache[[32]byte, *cacheEntry]
-	origins map[string]types.Origin // Hostname -> Origin
-	shields map[string]types.Shield // Hostname -> Shield
+	origins map[string]types.Origin     // Hostname -> Origin
+	shields map[netip.Addr]types.Shield // IPv4 -> Shield
 	transport *http.Transport
 }
 
@@ -126,9 +126,10 @@ func NewCacheServer(origins []types.Origin, shields []types.Shield, transport *h
 		originMap[origin.Hostname] = origin
 	}
 
-	shieldMap := make(map[string]types.Shield)
+	shieldMap := make(map[netip.Addr]types.Shield)
+	addr := netip.MustParseAddr("192.168.88.40")
 	for _, shield := range shields {
-		shieldMap[shield.Hostname] = shield
+		shieldMap[addr] = shield
 	}
 
 	return &CacheServer{
