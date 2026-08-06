@@ -10,6 +10,8 @@
 - [x] マルチテナント対応 (Host -> origin)
 - [ ] TLS終端とSNIによる証明書切り替え
 - [ ] Originの冗長化
+- [ ] Maglev Hashingを実装
+- [ ] ドメイン名はローカルのDNSサーバで解決
 
 # その他
 
