@@ -56,9 +56,16 @@ type ProbeResult struct {
 	ResponseCode int    `json:"response_code"`
 }
 
-type OriginInfo struct {
+type Origin struct {
 	// Id   string  `json:"id"`
 	Ip4      netip.Addr
+	Hostname string
+	Port     string
+	Url      *url.URL
+}
+
+type Shield struct {
+	Ip4      netip.Addr // TODO: 多分IPアドレスはここで持たない方がいい DNSに頼るべき
 	Hostname string
 	Port     string
 	Url      *url.URL
