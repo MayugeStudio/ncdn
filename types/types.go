@@ -2,6 +2,8 @@ package types
 
 import (
 	"net/netip"
+	"net/http"
+	"net/url"
 )
 
 type PoPInfo struct {
@@ -55,4 +57,22 @@ type ProbeResult struct {
 	ResponseCode int    `json:"response_code"`
 }
 
+type CacheEntry struct {
+	StatusCode int
+	Header     http.Header
+	Body       []byte
+}
 
+type Origin struct {
+	Ip4      netip.Addr
+	Hostname string
+	Port     string
+	Url      *url.URL
+}
+
+type Shield struct {
+	Ip4      netip.Addr // TODO: 多分IPアドレスはここで持たない方がいい DNSに頼るべき
+	Hostname string
+	Port     string
+	Url      *url.URL
+}

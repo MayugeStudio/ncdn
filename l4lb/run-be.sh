@@ -10,7 +10,8 @@ mkdir -p ${LOG_DIR}
 
 set -x
 go build -o ${BIN_DIR}/origin ${SRC_DIR}/origin
-go build -o ${BIN_DIR}/popcache ${SRC_DIR}/popcache
+go build -o ${BIN_DIR}/popcache ${SRC_DIR}/popcache/cmd/popcache
+go build -o ${BIN_DIR}/shield ${SRC_DIR}/popcache/cmd/shield
 set +x
 
 cd ${SRC_DIR}/l4lb
