@@ -14,7 +14,7 @@ import re
 import sys
 import time
 
-NODES = ["C0", "C1", "C2", "C3", "C4"]
+NODES = ["C0", "C1", "C2"]
 ERR = "err"
 BAR_WIDTH = 30
 MOVES_SHOWN = 6
