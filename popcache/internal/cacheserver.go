@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/netip"
 
-	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/yzp0n/ncdn/types"
 )
 
@@ -43,17 +42,14 @@ func Fetch(ctx context.Context, dest string, port string, r *http.Request, t *ht
 
 type CacheServer struct {
 	nodeId    string
-	cache     *lru.Cache[[32]byte, *types.CacheEntry]
 	origins   map[string]types.Origin // Hostname -> Origin
 	shields   []types.Shield // Hostname -> Shield
+	cache     *Cache
 	transport *http.Transport
 }
 
 func NewCacheServer(nodeId string, origins []types.Origin, shields []types.Shield, transport *http.Transport) *CacheServer {
-	cache, err := lru.New[[32]byte, *types.CacheEntry](256)
-	if err != nil {
-		log.Fatalf("Failed to create lru.Cache: %v", err)
-	}
+	cache := NewCache(256)
 	
 	originMap := make(map[string]types.Origin)
 	for _, origin := range origins {
@@ -155,7 +151,7 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
-		c.cache.Add(key, &types.CacheEntry{
+		c.cache.Put(key, &types.CacheEntry{
 			StatusCode: res.StatusCode,
 			Header:     h,
 			Body:       body,
@@ -180,7 +176,7 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
-		c.cache.Add(key, &types.CacheEntry{
+		c.cache.Put(key, &types.CacheEntry{
 			StatusCode: res.StatusCode,
 			Header:     h,
 			Body:       body,

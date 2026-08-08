@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"net/netip"
 	"net/http"
 	"net/url"
@@ -69,6 +70,13 @@ type Origin struct {
 	Port     string
 	Url      *url.URL
 }
+func (c *CacheEntry) Clone() *CacheEntry {
+	return &CacheEntry{
+		StatusCode: c.StatusCode,
+		Header: c.Header.Clone(),
+		Body: bytes.Clone(c.Body),
+	}
+}
 
 type Shield struct {
 	Ip4      netip.Addr
@@ -76,3 +84,4 @@ type Shield struct {
 	Port     string
 	Url      *url.URL
 }
+
