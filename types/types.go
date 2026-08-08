@@ -71,7 +71,7 @@ type Origin struct {
 }
 
 type Shield struct {
-	Ip4      netip.Addr // TODO: 多分IPアドレスはここで持たない方がいい DNSに頼るべき
+	Ip4      netip.Addr
 	Hostname string
 	Port     string
 	Url      *url.URL
