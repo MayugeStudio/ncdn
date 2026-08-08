@@ -77,7 +77,6 @@ func NewCacheServer(nodeId string, origins []types.Origin, shields []types.Shiel
 
 // 指定したhostname, portのサーバにHTTPリクエストを送る。その際、ヘッダを引き継ぐ
 func (c *CacheServer) fetch(ctx context.Context, r *http.Request, ip4 netip.Addr, port string) (*http.Response, error) {
-	log.Printf("%s: Send request to shield(%s:%s)\n", c.nodeId, ip4, port)
 	resp, err := Fetch(ctx, ip4.String(), port, r, c.transport)
 	if err != nil {
 		log.Printf("Failed to fetch data from %s:%s\n", ip4, port)
@@ -112,27 +111,60 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// キャッシュミス
 	log.Println("Cache Miss !!!")
 
-	// shieldに取りに行く
-	hostname, _, err := net.SplitHostPort(r.Host) // FIXME: ポート番号なしの場合を考慮する
-	log.Printf("Host: %s\n", hostname)
-	if err != nil {
-		http.Error(w, "unknown host", http.StatusNotFound)
-		return
-	}
-
+	// Shieldに取りに行く
 	// Shieldを選択 
 	// TODO: hashアルゴリズムを実装
 	shield := c.shields[0]
 
-	// shieldに取りに行く場合もX-CacheはMissとしておく
-	w.Header().Add("X-Cache", "Miss")
-
+	log.Printf("%s: Send request to shield (%s:%s)\n", c.nodeId, shield.Ip4, shield.Port)
 	res, err := c.fetch(r.Context(), r, shield.Ip4, shield.Port)
+
 	if err != nil {
-		// shieldにフェッチできなかった時の対策を考える
-		// 1. originにフェールオーバ
-		// 2. 別shieldに行ってからoriginにフェールオーバ
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		// 別Originにフェールオーバする
+		log.Printf("The shield is down. Fetch data from origin server directly\n")
+		// ホスト名からOriginサーバのデータを取得
+		hostname, _, err := net.SplitHostPort(r.Host)
+		if err != nil {
+			http.Error(w, "unknown host", http.StatusNotFound)
+			return
+		}
+		log.Printf("Fetch data from %s\n", hostname)
+
+		origin, ok := c.origins[hostname]
+		if !ok {
+			http.Error(w, "unknown origin", http.StatusNotFound)
+			log.Printf("unknown hostname: %s\n", hostname)
+			return
+		}
+
+		// データをとってくる
+		log.Printf("%s: Send request to origin (failover) (%s:%s)\n", c.nodeId, origin.Ip4, origin.Port)
+		res, err := c.fetch(r.Context(), r, origin.Ip4, origin.Port)
+		if err != nil {
+			http.Error(w, "unknown origin", http.StatusNotFound)
+			log.Printf("failed to fetch data from %s", hostname)
+			return
+		}
+
+		// キャッシュに保存する
+		h := res.Header.Clone()
+		h.Del("X-Cache")
+		h.Del("X-NCDN-PoPCache-NodeId")
+		h.Del("X-NCDN-Shield-NodeId")
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
+		c.cache.Add(key, &types.CacheEntry{
+			StatusCode: res.StatusCode,
+			Header:     h,
+			Body:       body,
+		})
+
+		// レスポンスに書き込む
+		w.Header().Add("X-Cache", "Miss")
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
 		return
 	}
 	defer res.Body.Close()
@@ -155,7 +187,7 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 
 		// レスポンスに書き込む
-		w.Header().Add("X-Cache", res.Header.Get("X-Cache"))
+		w.Header().Add("X-Cache", "Miss")
 		w.Header().Add("X-NCDN-Shield-NodeId", res.Header.Get("X-NCDN-Shield-NodeId"))
 		w.WriteHeader(http.StatusOK)
 		w.Write(body)
