@@ -1,0 +1,13 @@
+[
+  {
+    "ip4": "192.168.88.40",
+    "hostname": "s0.shield.ncdn.test",
+    "openPort": "8890"
+  },
+  {
+    "ip4": "192.168.88.41",
+    "hostname": "s1.shield.ncdn.test",
+    "openPort": "8890"
+  }
+]
+

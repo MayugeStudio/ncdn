@@ -2,7 +2,7 @@ import http from 'k6/http';
 import { sleep } from 'k6';
 import { Counter } from 'k6/metrics';
 
-const NODES = ['C0', 'C1', 'C2', 'C3', 'C4']
+const NODES = ['C0', 'C1', 'C2']
 const LOG_INTERVAL_MS = Number(__ENV.LOG_INTERVAL_MS || 1000);
 
 const hits = {};
