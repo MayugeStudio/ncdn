@@ -12,7 +12,7 @@ import (
 
 var md5func = md5.New()
 
-func rednezvousHash(s string) int {
+func rendezvousHash(s string) int {
 	hash := md5.Sum([]byte(s))
 	val := hash[:]
 	sum := binary.BigEndian.Uint32(val)
@@ -30,7 +30,7 @@ func RendezvousSelect(r *http.Request, backends []*types.Backend) *types.Backend
 	currentMax := 0
 
 	for _, backend := range backends {
-		hash := rednezvousHash(fmt.Sprintf("%s:%s", backend.NodeId, key))
+		hash := rendezvousHash(fmt.Sprintf("%s:%s", backend.NodeId, key))
 		if currentMax < hash {
 			currentMax = hash
 			res = backend
