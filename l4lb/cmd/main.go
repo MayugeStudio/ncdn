@@ -63,11 +63,11 @@ func main() {
 	}
 
 	cfg := &l4lbdrv.Config{
-		BinPath:        *lbBin,
-		XdpCapHookPath: *xdpcapHookPath,
-		InterfaceName:  *xdpif,
-		VIP:            netip.MustParseAddr(*vip),
-		Dests:          dests,
+		BinPath:             *lbBin,
+		XdpCapHookPath:      *xdpcapHookPath,
+		InterfaceName:       *xdpif,
+		VIP:                 netip.MustParseAddr(*vip),
+		Dests:               dests,
 		HealthCheckEndpoint: *healthCheckEndpoint,
 	}
 	lb, err := l4lbdrv.New(cfg)

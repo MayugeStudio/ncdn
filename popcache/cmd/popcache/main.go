@@ -2,31 +2,41 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/yzp0n/ncdn/httprps"
-	"github.com/yzp0n/ncdn/types"
 	"github.com/yzp0n/ncdn/popcache/internal"
+	"github.com/yzp0n/ncdn/types"
 )
 
-var originConfigPath = flag.String("originConfigPath", "origin_config.json", "Path to the config file for pocsache")
-var shieldConfigPath = flag.String("shieldConfigPath", "shield_config.json", "Path to the config file for origin shield")
+var originConfigPath = flag.String("originConfigPath", "origin_config.json", "Path to the config file for origin")
+var edgeConfigPath = flag.String("edgeConfigPath", "edge_config.json", "Path to the config file for edge")
+var shieldConfigPath = flag.String("shieldConfigPath", "shield_config.json", "Path to the config file for shield")
 var listenAddr = flag.String("listenAddr", ":8889", "Address to listen on")
 var nodeId = flag.String("nodeId", "unknown_node", "Name of the node")
 
 func main() {
 	flag.Parse()
-
-	origins, err := internal.ParseUpstreams(*originConfigPath)
-	if err != nil {
-		log.Fatalf("Failed to parse configurations: %v", err)
+	sharedTransport := &http.Transport{
+		MaxIdleConns:        1024,
+		MaxIdleConnsPerHost: 256,
 	}
-	shields, err := internal.ParseUpstreams(*shieldConfigPath)
+
+	origins, err := internal.ParseBackends(*originConfigPath, sharedTransport)
 	if err != nil {
-		log.Fatalf("Failed to parse configurations: %v", err)
+		log.Fatalf("Failed to parse configs: %v", err)
+	}
+	edges, err := internal.ParseBackends(*edgeConfigPath, sharedTransport)
+	if err != nil {
+		log.Fatalf("Failed to parse configs: %v", err)
+	}
+	shields, err := internal.ParseBackends(*shieldConfigPath, sharedTransport)
+	if err != nil {
+		log.Fatalf("Failed to parse configs: %v", err)
 	}
 
 	start := time.Now()
@@ -58,15 +68,25 @@ func main() {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	sharedTransport := &http.Transport{
-		MaxIdleConns: 1024,
-		MaxIdleConnsPerHost: 256,
+	noUpstreamAvailable := internal.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return nil, errors.New("no upstream available")
+	})
+
+	originLookup := make(map[string]*types.Backend)
+	for _, origin := range origins {
+		originLookup[origin.Hostname] = origin
 	}
-	cs := internal.NewCacheServer(*nodeId, origins, shields, sharedTransport)
+
+	forwardToOrigin := internal.Forward(noUpstreamAvailable, internal.ByHost(originLookup), *nodeId)
+	forwardToShield := internal.Forward(forwardToOrigin, internal.Rendezvous(shields), *nodeId)
+	nodeShard := internal.Shard(forwardToShield, edges, *nodeId)
+
+	cs := internal.NewCacheServer(*nodeId, originLookup, nodeShard)
 
 	mux.Handle("/", cs)
 
-	log.Printf("Listening on %s...", *listenAddr)
+	log.Printf("%s starting...\n", *nodeId)
+	log.Printf("Listening on %s...\n", *listenAddr)
 	if err := http.ListenAndServe(*listenAddr, nil); err != nil {
 		log.Fatal(err)
 	}

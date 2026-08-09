@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
 	"github.com/yzp0n/ncdn/types"
 )
 
@@ -18,23 +19,22 @@ func rednezvousHash(s string) int {
 	return int(sum)
 }
 
-// RendezvousSelect selects upstreams using rendezvous hashing
-func RendezvousSelect(r *http.Request, upstreams []*types.Upstream) *types.Upstream {
-	if len(upstreams) == 0 {
-		log.Fatalf("upstreams must have at least one upstream")
+// RendezvousSelect selects backends using rendezvous hashing
+func RendezvousSelect(r *http.Request, backends []*types.Backend) *types.Backend {
+	if len(backends) == 0 {
+		log.Fatalf("backends must have at least one backend")
 	}
 	key := r.Host + r.URL.Port() + r.URL.RequestURI()
 
-	var res *types.Upstream
+	var res *types.Backend
 	currentMax := 0
 
-	for _, upstream := range upstreams {
-		hash := rednezvousHash(fmt.Sprintf("%s:%s", upstream.NodeId, key))
+	for _, backend := range backends {
+		hash := rednezvousHash(fmt.Sprintf("%s:%s", backend.NodeId, key))
 		if currentMax < hash {
 			currentMax = hash
-			res = upstream
+			res = backend
 		}
 	}
 	return res
 }
-

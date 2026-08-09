@@ -126,6 +126,7 @@ func main() {
 		fmt.Fprintf(w, "RPS: %.2f\n", rps.GetRPS())
 	})
 
+	log.Printf("%s starting...\n", *nodeId)
 	log.Printf("Listening on %s...\n", *listenAddr)
 	err := http.ListenAndServe(*listenAddr, nil)
 	if err != nil {

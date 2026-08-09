@@ -2,6 +2,7 @@ package internal
 
 import (
 	"log"
+
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/yzp0n/ncdn/types"
 )
@@ -33,4 +34,3 @@ func (c *Cache) Get(key Key) (*types.CacheEntry, bool) {
 func (c *Cache) Put(key Key, ce *types.CacheEntry) {
 	c.cache.Add(key, ce)
 }
-
