@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -11,6 +10,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 func RemovePortFromHost(hostname string) string {
@@ -30,13 +31,13 @@ func ParseBackends(configPath string, transport *http.Transport) ([]*Backend, er
 	defer f.Close()
 
 	data := []struct {
-		NodeId   string `json:"nodeId"`
-		Ip4      string `json:"ip4"`
-		Hostname string `json:"hostname"`
-		Port     string `json:"openPort"`
+		NodeId   string `yaml:"nodeId"`
+		Ip4      string `yaml:"ip4"`
+		Hostname string `yaml:"hostname"`
+		Port     string `yaml:"openPort"`
 	}{}
 
-	if err := json.NewDecoder(f).Decode(&data); err != nil {
+	if err := yaml.NewDecoder(f).Decode(&data); err != nil {
 		return nil, fmt.Errorf("failed to parse configs %s: %w", configPath, err)
 	}
 

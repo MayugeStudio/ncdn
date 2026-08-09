@@ -16,8 +16,8 @@ import (
 
 var g singleflight.Group
 
-var shieldConfigPath = flag.String("shieldConfigPath", "shield_config.json", "Path to the config file for shields")
-var originConfigPath = flag.String("originConfigPath", "origin_config.json", "Path to the config file for origins")
+var shieldConfigPath = flag.String("shieldConfigPath", "shield_config.yaml", "Path to the config file for shields")
+var originConfigPath = flag.String("originConfigPath", "origin_config.yaml", "Path to the config file for origins")
 var listenAddr = flag.String("listenAddr", ":8889", "Address to listen on")
 var nodeId = flag.String("nodeId", "unknown_node", "Name of the node")
 

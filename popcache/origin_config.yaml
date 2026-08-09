@@ -1,0 +1,12 @@
+- nodeId: O0
+  ip4: 192.168.88.30
+  hostname: a.ncdn.test
+  openPort: "8888"
+- nodeId: O1
+  ip4: 192.168.88.31
+  hostname: b.ncdn.test
+  openPort: "8888"
+- nodeId: O2
+  ip4: 192.168.88.32
+  hostname: c.ncdn.test
+  openPort: "8888"
