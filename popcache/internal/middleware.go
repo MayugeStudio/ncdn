@@ -30,8 +30,7 @@ func CacheAndFetch(next http.RoundTripper, r *http.Request, cache *Cache) (*type
 	ce, ok := cache.Get(key)
 	if ok /* キャッシュヒット */ {
 		log.Printf("Cache HIT: (%s:%s%s)\n", r.Host, r.URL.Port(), r.URL.RequestURI())
-		// TODO: X-Cacheは`Hit`ではなく`HIT`であるべき
-		ce.Header.Set("X-Cache", "Hit")
+		ce.Header.Set("X-Cache", "HIT")
 		return ce, nil
 	}
 
@@ -60,7 +59,6 @@ func CacheAndFetch(next http.RoundTripper, r *http.Request, cache *Cache) (*type
 	}
 	cache.Put(key, newCacheEntry)
 
-	// TODO: X-Cacheは`Miss`ではなく`MISS`であるべき
 	newCacheEntry.Header.Add("X-Cache", "Miss")
 	return newCacheEntry, nil
 }
@@ -108,7 +106,6 @@ func Rendezvous(backends []*types.Backend) BackendSelector {
 
 func ByHost(lookupTable map[string]*types.Backend) BackendSelector {
 	return func(r *http.Request) *types.Backend {
-		// TODO: ポート番号をどうにかする
 		return lookupTable[r.Host]
 	}
 }
