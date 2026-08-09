@@ -2,8 +2,10 @@ package types
 
 import (
 	"bytes"
-	"net/netip"
+	"context"
+	"log"
 	"net/http"
+	"net/netip"
 	"net/url"
 )
 
@@ -58,6 +60,7 @@ type ProbeResult struct {
 	ResponseCode int    `json:"response_code"`
 }
 
+// TODO: 名前変更
 type CacheEntry struct {
 	StatusCode int
 	Header     http.Header
@@ -67,16 +70,32 @@ type CacheEntry struct {
 func (c *CacheEntry) Clone() *CacheEntry {
 	return &CacheEntry{
 		StatusCode: c.StatusCode,
-		Header: c.Header.Clone(),
-		Body: bytes.Clone(c.Body),
+		Header:     c.Header.Clone(),
+		Body:       bytes.Clone(c.Body),
 	}
 }
 
+// TODO: internalに移動
 type Backend struct {
 	NodeId   string
 	Ip4      netip.Addr
-	Hostname string
+	Hostname string // Hostnameいらないかも
 	Port     string
 	Url      *url.URL
+
+	Transport *http.Transport
 }
 
+func (b *Backend) Fetch(ctx context.Context, r *http.Request) (*http.Response, error) {
+	url := "http://" + b.Ip4.String() + ":" + b.Port + r.URL.RequestURI()
+	newReq, err := http.NewRequestWithContext(ctx, r.Method, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	newReq.Header = r.Header.Clone()
+	newReq.Host = r.Host
+
+	log.Printf("Send request to %s(%s)\n", b.NodeId, url)
+	return b.Transport.RoundTrip(newReq)
+}
