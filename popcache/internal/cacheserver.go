@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/netip"
 
-	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/yzp0n/ncdn/types"
 )
 
@@ -43,28 +42,19 @@ func Fetch(ctx context.Context, dest string, port string, r *http.Request, t *ht
 
 type CacheServer struct {
 	nodeId    string
-	cache     *lru.Cache[[32]byte, *types.CacheEntry]
-	origins   map[string]types.Origin // Hostname -> Origin
-	shields   []types.Shield // Hostname -> Shield
+	cache     *Cache
+	origins   map[string]*types.Upstream // Hostname -> Origin
+	shields   []*types.Upstream // Hostname -> Shield
 	transport *http.Transport
 }
 
-func NewCacheServer(nodeId string, origins []types.Origin, shields []types.Shield, transport *http.Transport) *CacheServer {
-	cache, err := lru.New[[32]byte, *types.CacheEntry](256)
-	if err != nil {
-		log.Fatalf("Failed to create lru.Cache: %v", err)
-	}
+func NewCacheServer(nodeId string, origins []*types.Upstream, shields []*types.Upstream, transport *http.Transport) *CacheServer {
+	cache := NewCache(256)
 	
-	originMap := make(map[string]types.Origin)
+	originMap := make(map[string]*types.Upstream)
 	for _, origin := range origins {
 		originMap[origin.Hostname] = origin
 	}
-
-	// shieldMap := make(map[netip.Addr]Shield)
-	// addr := netip.MustParseAddr("192.168.88.40")
-	// for _, shield := range shields {
-	// 	shieldMap[addr] = shield
-	// }
 
 	return &CacheServer{
 		nodeId: nodeId,
@@ -87,10 +77,9 @@ func (c *CacheServer) fetch(ctx context.Context, r *http.Request, ip4 netip.Addr
 }
 
 func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.Host, r.URL.Port(), r.URL.RequestURI())
-	key := CacheKey(r.Host, r.URL.Port(), r.URL.RequestURI())
-
 	w.Header().Set("X-NCDN-PoPCache-NodeId", c.nodeId)
+
+	key := CacheKey(r.Host, r.URL.Port(), r.URL.RequestURI())
 
 	// キャッシュヒット
 	// TODO: Fresh Stale Missを返す関数を定義する
@@ -113,8 +102,7 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Shieldに取りに行く
 	// Shieldを選択 
-	// TODO: hashアルゴリズムを実装
-	shield := c.shields[0]
+	shield := RendezvousSelect(r, c.shields)
 
 	log.Printf("%s: Send request to shield (%s:%s)\n", c.nodeId, shield.Ip4, shield.Port)
 	res, err := c.fetch(r.Context(), r, shield.Ip4, shield.Port)
@@ -155,7 +143,7 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
-		c.cache.Add(key, &types.CacheEntry{
+		c.cache.Put(key, &types.CacheEntry{
 			StatusCode: res.StatusCode,
 			Header:     h,
 			Body:       body,
@@ -180,7 +168,7 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
-		c.cache.Add(key, &types.CacheEntry{
+		c.cache.Put(key, &types.CacheEntry{
 			StatusCode: res.StatusCode,
 			Header:     h,
 			Body:       body,

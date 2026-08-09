@@ -22,17 +22,17 @@ var g singleflight.Group
 type Shield struct {
 	nodeId    string
 	cache     *lru.Cache[[32]byte, *types.CacheEntry]
-	origins   map[string]types.Origin
+	origins   map[string]*types.Upstream
 	transport *http.Transport
 }
 
-func NewShield(nodeId string, origins []types.Origin, transport *http.Transport) *Shield {
+func NewShield(nodeId string, origins []*types.Upstream, transport *http.Transport) *Shield {
 	cache, err := lru.New[[32]byte, *types.CacheEntry](256)
 	if err != nil {
 		log.Fatalf("Failed to create lru.Cache: %v", err)
 	}
 
-	originMap := make(map[string]types.Origin)
+	originMap := make(map[string]*types.Upstream)
 	for _, origin := range origins {
 		originMap[origin.Hostname] = origin
 	}
@@ -71,6 +71,7 @@ func (s *Shield) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		origin, ok := s.origins[hostname]
 		if !ok {
 			http.Error(w, "unknown host", http.StatusNotFound)
+			return
 		}
 
 		w.Header().Add("X-NCDN-Shield-NodeId", s.nodeId)
@@ -98,10 +99,6 @@ func (s *Shield) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Body:       body,
 			}
 			s.cache.Add(key, ce)
-			// レスポンスに書き込む
-			w.Header().Add("X-Cache", "Miss")
-			w.WriteHeader(res.StatusCode)
-			w.Write(body)
 			log.Printf("Successfully fetching data from %s:%s\n", origin.Ip4.String(), origin.Port)
 			return ce, nil
 		})
@@ -119,7 +116,7 @@ func (s *Shield) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		w.Header().Add("X-Cache", "Hit")
+		w.Header().Add("X-Cache", "Miss")
 		w.WriteHeader(ce.StatusCode)
 		w.Write(ce.Body)
 	}
@@ -132,7 +129,7 @@ var nodeId = flag.String("nodeId", "unknown_node", "Name of the node")
 func main() {
 	flag.Parse()
 
-	origins, err := internal.ParseOrigins(*originConfigPath)
+	origins, err := internal.ParseUpstreams(*originConfigPath)
 	if err != nil {
 		log.Fatalf("Failed to parse configurations: %v", err)
 	}

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"net/netip"
 	"net/http"
 	"net/url"
@@ -60,19 +61,22 @@ type ProbeResult struct {
 type CacheEntry struct {
 	StatusCode int
 	Header     http.Header
-	Body       []byte
+	Body       []byte // Bodyをio.Reader的な感じのやつにしてもいいかも何回も読めるやつ
 }
 
-type Origin struct {
+func (c *CacheEntry) Clone() *CacheEntry {
+	return &CacheEntry{
+		StatusCode: c.StatusCode,
+		Header: c.Header.Clone(),
+		Body: bytes.Clone(c.Body),
+	}
+}
+
+type Upstream struct {
+	NodeId   string
 	Ip4      netip.Addr
 	Hostname string
 	Port     string
 	Url      *url.URL
 }
 
-type Shield struct {
-	Ip4      netip.Addr
-	Hostname string
-	Port     string
-	Url      *url.URL
-}
