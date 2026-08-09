@@ -56,6 +56,7 @@ func (s *Shield) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		w.Header().Add("X-Cache", "Hit")
+		w.Header().Add("X-NCDN-Shield-NodeId", s.nodeId)
 		w.WriteHeader(ce.StatusCode)
 		w.Write(ce.Body)
 	} else /* キャッシュミス */ {
