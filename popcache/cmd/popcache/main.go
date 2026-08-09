@@ -13,9 +13,9 @@ import (
 	"github.com/yzp0n/ncdn/types"
 )
 
-var originConfigPath = flag.String("originConfigPath", "origin_config.yaml", "Path to the config file for origin")
-var edgeConfigPath = flag.String("edgeConfigPath", "edge_config.yaml", "Path to the config file for edge")
-var shieldConfigPath = flag.String("shieldConfigPath", "shield_config.yaml", "Path to the config file for shield")
+var originConfigPath = flag.String("originConfigPath", "config/origin.yaml", "Path to the config file for origin")
+var edgeConfigPath = flag.String("edgeConfigPath", "config/edge.yaml", "Path to the config file for edge")
+var shieldConfigPath = flag.String("shieldConfigPath", "config/shield.yaml", "Path to the config file for shield")
 var listenAddr = flag.String("listenAddr", ":8889", "Address to listen on")
 var nodeId = flag.String("nodeId", "unknown_node", "Name of the node")
 
