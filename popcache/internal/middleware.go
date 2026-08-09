@@ -49,7 +49,6 @@ func CacheAndFetch(next http.RoundTripper, r *http.Request, cache *Cache) (*Obje
 		return nil, err
 	}
 
-	// TODO: Objectではなく別の名前に変更する
 	newObject := &Object{
 		StatusCode: resp.StatusCode,
 		Header:     cacheHeader,
