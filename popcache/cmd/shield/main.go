@@ -71,6 +71,7 @@ func (s *Shield) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		origin, ok := s.origins[hostname]
 		if !ok {
 			http.Error(w, "unknown host", http.StatusNotFound)
+			return
 		}
 
 		w.Header().Add("X-NCDN-Shield-NodeId", s.nodeId)
@@ -98,10 +99,6 @@ func (s *Shield) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Body:       body,
 			}
 			s.cache.Add(key, ce)
-			// レスポンスに書き込む
-			w.Header().Add("X-Cache", "Miss")
-			w.WriteHeader(res.StatusCode)
-			w.Write(body)
 			log.Printf("Successfully fetching data from %s:%s\n", origin.Ip4.String(), origin.Port)
 			return ce, nil
 		})
@@ -119,7 +116,7 @@ func (s *Shield) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		w.Header().Add("X-Cache", "Hit")
+		w.Header().Add("X-Cache", "Miss")
 		w.WriteHeader(ce.StatusCode)
 		w.Write(ce.Body)
 	}
