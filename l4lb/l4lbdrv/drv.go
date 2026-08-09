@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"net/http"
 	"net/netip"
 	"path/filepath"
-	"syscall"
 	"sync"
+	"syscall"
 	"time"
-	"net/http"
 
 	"github.com/cilium/ebpf"
 	"github.com/dchest/siphash"
@@ -36,7 +36,7 @@ type L4LB struct {
 	bindings     *Bindings
 	linkAttacher *LinkAttacher
 
-	deadDests  []bool // true -> dead, false -> alive
+	deadDests []bool // true -> dead, false -> alive
 
 	// Maglev
 	offsets []uint32 // ルックアップテーブルを生成するためのoffset (len N)
@@ -68,7 +68,7 @@ func New(cfg *Config) (*L4LB, error) {
 		bindings: bindings,
 	}
 
-	lb.deadDests = make([]bool, len(lb.cfg.Dests));
+	lb.deadDests = make([]bool, len(lb.cfg.Dests))
 	for i := range lb.deadDests {
 		lb.deadDests[i] = false
 	}
@@ -186,7 +186,7 @@ func (lb *L4LB) nextOffset(i int) uint32 {
 
 func (lb *L4LB) HealthCheck(dest DestinationEntry) bool {
 	url := "http://" + dest.IPAddr.String() + lb.cfg.HealthCheckEndpoint
-	c := &http.Client {
+	c := &http.Client{
 		Timeout: 500 * time.Millisecond,
 	}
 	// slog.Info("healthchecking at ", slog.String("url", url))
@@ -210,7 +210,7 @@ func (lb *L4LB) HealthCheckAll() bool {
 
 	// slog.Info("Do health check...")
 
-	wg.Add(len(lb.cfg.Dests)-1)
+	wg.Add(len(lb.cfg.Dests) - 1)
 	for i, dest := range lb.cfg.Dests {
 		if i == 0 { // Dests[0] = l4lb itself
 			continue

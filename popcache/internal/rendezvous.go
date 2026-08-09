@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
 	"github.com/yzp0n/ncdn/types"
 )
 
@@ -37,4 +38,3 @@ func RendezvousSelect(r *http.Request, backends []*types.Backend) *types.Backend
 	}
 	return res
 }
-
