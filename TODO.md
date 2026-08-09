@@ -10,7 +10,8 @@
 - [x] マルチテナント対応 (Host -> origin)
 - [ ] TLS終端とSNIによる証明書切り替え
 - [ ] Originの冗長化
-- [ ] Maglev Hashingを実装
+<!-- - [ ] Maglev Hashingを実装 -->
+- [x] Rendezvous Hashingを実装
 - [ ] 他CDNに対するフェールオーバ
 - [x] Shieldが落ちている時にOriginに直接リクエストを送信する
 <!-- - [ ] ドメイン名はローカルのDNSサーバで解決 -->
