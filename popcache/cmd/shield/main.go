@@ -38,6 +38,7 @@ func NewShield(nodeId string, origins []*types.Upstream, transport *http.Transpo
 	}
 
 	return &Shield{
+		nodeId: nodeId,
 		cache: cache,
 		origins: originMap,
 		transport: transport,
