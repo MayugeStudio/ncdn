@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/yzp0n/ncdn/types"
 )
 
 var md5func = md5.New()
@@ -20,13 +18,13 @@ func rendezvousHash(s string) int {
 }
 
 // RendezvousSelect selects backends using rendezvous hashing
-func RendezvousSelect(r *http.Request, backends []*types.Backend) *types.Backend {
+func RendezvousSelect(r *http.Request, backends []*Backend) *Backend {
 	if len(backends) == 0 {
 		log.Fatalf("backends must have at least one backend")
 	}
 	key := r.Host + r.URL.Port() + r.URL.RequestURI()
 
-	var res *types.Backend
+	var res *Backend
 	currentMax := 0
 
 	for _, backend := range backends {

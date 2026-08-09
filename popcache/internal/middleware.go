@@ -5,8 +5,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-
-	"github.com/yzp0n/ncdn/types"
 )
 
 // cacheの識別に使用するためのキーを生成する
@@ -25,7 +23,7 @@ func CacheKey(r *http.Request) [32]byte {
 }
 
 // TODO: Fresh Stale Missを返す関数を定義する
-func CacheAndFetch(next http.RoundTripper, r *http.Request, cache *Cache) (*types.Object, error) {
+func CacheAndFetch(next http.RoundTripper, r *http.Request, cache *Cache) (*Object, error) {
 	key := CacheKey(r)
 	obj, ok := cache.Get(key)
 	if ok /* キャッシュヒット */ {
@@ -52,7 +50,7 @@ func CacheAndFetch(next http.RoundTripper, r *http.Request, cache *Cache) (*type
 	}
 
 	// TODO: Objectではなく別の名前に変更する
-	newObject := &types.Object{
+	newObject := &Object{
 		StatusCode: resp.StatusCode,
 		Header:     cacheHeader,
 		Body:       body,
@@ -71,7 +69,7 @@ func (f RoundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 
 // Shard selects backends from peers. peers must be the same tier server of the caller.
 // It expects the caller to verify that it does not have cache entry for `r`.
-func Shard(next http.RoundTripper, peers []*types.Backend, nodeId string) RoundTripperFunc {
+func Shard(next http.RoundTripper, peers []*Backend, nodeId string) RoundTripperFunc {
 	return func(r *http.Request) (*http.Response, error) {
 		// X-Shardがある場合、同じTierのサーバから飛んできているので上流に流す
 		if r.Header.Get("X-Shard") != "" {
@@ -96,16 +94,16 @@ func Shard(next http.RoundTripper, peers []*types.Backend, nodeId string) RoundT
 	}
 }
 
-type BackendSelector func(*http.Request) *types.Backend
+type BackendSelector func(*http.Request) *Backend
 
-func Rendezvous(backends []*types.Backend) BackendSelector {
-	return func(r *http.Request) *types.Backend {
+func Rendezvous(backends []*Backend) BackendSelector {
+	return func(r *http.Request) *Backend {
 		return RendezvousSelect(r, backends)
 	}
 }
 
-func ByHost(lookupTable map[string]*types.Backend) BackendSelector {
-	return func(r *http.Request) *types.Backend {
+func ByHost(lookupTable map[string]*Backend) BackendSelector {
+	return func(r *http.Request) *Backend {
 		return lookupTable[r.Host]
 	}
 }

@@ -11,8 +11,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-
-	"github.com/yzp0n/ncdn/types"
 )
 
 func RemovePortFromHost(hostname string) string {
@@ -24,7 +22,7 @@ func RemovePortFromHost(hostname string) string {
 	return outHost
 }
 
-func ParseBackends(configPath string, transport *http.Transport) ([]*types.Backend, error) {
+func ParseBackends(configPath string, transport *http.Transport) ([]*Backend, error) {
 	f, err := os.Open(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configs from %s", configPath)
@@ -42,7 +40,7 @@ func ParseBackends(configPath string, transport *http.Transport) ([]*types.Backe
 		return nil, fmt.Errorf("failed to parse configs %s: %w", configPath, err)
 	}
 
-	out := []*types.Backend{}
+	out := []*Backend{}
 	for i := range data {
 		ip4 := netip.MustParseAddr(data[i].Ip4)
 		hostname := strings.ToLower(data[i].Hostname)
@@ -51,7 +49,7 @@ func ParseBackends(configPath string, transport *http.Transport) ([]*types.Backe
 		if err != nil {
 			log.Fatalf("Failed to parse url: %s\n", urlStr)
 		}
-		out = append(out, &types.Backend{
+		out = append(out, &Backend{
 			NodeId:    data[i].NodeId,
 			Ip4:       ip4,
 			Hostname:  hostname,

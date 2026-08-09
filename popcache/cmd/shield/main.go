@@ -72,7 +72,7 @@ func main() {
 		return nil, errors.New("no upstream available")
 	})
 
-	originLookup := make(map[string]*types.Backend)
+	originLookup := make(map[string]*internal.Backend)
 	for _, origin := range origins {
 		originLookup[origin.Hostname] = origin
 	}

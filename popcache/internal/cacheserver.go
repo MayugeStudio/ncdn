@@ -3,19 +3,17 @@ package internal
 import (
 	"log"
 	"net/http"
-
-	"github.com/yzp0n/ncdn/types"
 )
 
 type CacheServer struct {
 	nodeId  string
 	cache   *Cache
-	originLookup map[string]*types.Backend
+	originLookup map[string]*Backend
 
 	roundTripper http.RoundTripper
 }
 
-func NewCacheServer(nodeId string, originLookup map[string]*types.Backend, roundTripper http.RoundTripper) *CacheServer {
+func NewCacheServer(nodeId string, originLookup map[string]*Backend, roundTripper http.RoundTripper) *CacheServer {
 	cache := NewCache(256)
 
 	return &CacheServer{
