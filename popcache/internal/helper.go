@@ -42,12 +42,17 @@ func ParseBackends(configPath string, transport *http.Transport) ([]*Backend, er
 
 	out := []*Backend{}
 	for i := range data {
-		ip4 := netip.MustParseAddr(data[i].Ip4)
+		ip4, err := netip.ParseAddr(data[i].Ip4)
+		if err != nil {
+			log.Printf("Failed to parse address: %s\n", data[i].Ip4)
+			return nil, err
+		}
 		hostname := strings.ToLower(data[i].Hostname)
 		urlStr := "http://" + data[i].Ip4 + ":" + data[i].Port
 		u, err := url.Parse(urlStr)
 		if err != nil {
-			log.Fatalf("Failed to parse url: %s\n", urlStr)
+			log.Printf("Failed to parse url: %s\n", urlStr)
+			return nil, err
 		}
 		out = append(out, &Backend{
 			NodeId:    data[i].NodeId,

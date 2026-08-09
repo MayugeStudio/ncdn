@@ -13,7 +13,7 @@ type Cache struct {
 }
 
 func NewCache(cap int) *Cache {
-	cache, err := lru.New[Key, *Object](256)
+	cache, err := lru.New[Key, *Object](cap)
 	if err != nil {
 		log.Fatalf("Failed to create lru.Cache: %v", err)
 	}
