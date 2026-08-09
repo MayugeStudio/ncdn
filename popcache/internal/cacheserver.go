@@ -108,7 +108,7 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	res, err := c.fetch(r.Context(), r, shield.Ip4, shield.Port)
 
 	if err != nil {
-		// 別Originにフェールオーバする
+		// Shieldがダウンしているので、Originにフェールオーバする
 		log.Printf("The shield is down. Fetch data from origin server directly\n")
 		// ホスト名からOriginサーバのデータを取得
 		hostname, _, err := net.SplitHostPort(r.Host)
@@ -141,7 +141,9 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.Del("X-NCDN-Shield-NodeId")
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
+			log.Println("failed to read body (failover to shield)")
 			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
 		}
 		c.cache.Put(key, &types.CacheEntry{
 			StatusCode: res.StatusCode,
@@ -158,30 +160,27 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer res.Body.Close()
 
 	// TODO: cache-controlをみる
-	if res.StatusCode == http.StatusOK {
-		// キャッシュに保存する
-		h := res.Header.Clone()
-		h.Del("X-Cache")
-		h.Del("X-NCDN-PoPCache-NodeId")
-		h.Del("X-NCDN-Shield-NodeId")
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-		}
-		c.cache.Put(key, &types.CacheEntry{
-			StatusCode: res.StatusCode,
-			Header:     h,
-			Body:       body,
-		})
-
-		// レスポンスに書き込む
-		w.Header().Add("X-Cache", "Miss")
-		w.Header().Add("X-NCDN-Shield-NodeId", res.Header.Get("X-NCDN-Shield-NodeId"))
-		w.WriteHeader(http.StatusOK)
-		w.Write(body)
+	// キャッシュに保存する
+	h := res.Header.Clone()
+	h.Del("X-Cache")
+	h.Del("X-NCDN-PoPCache-NodeId")
+	h.Del("X-NCDN-Shield-NodeId")
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Println("failed to read body (cache miss)\n")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
+	c.cache.Put(key, &types.CacheEntry{
+		StatusCode: res.StatusCode,
+		Header:     h,
+		Body:       body,
+	})
 
-	http.Error(w, "internal server error", http.StatusInternalServerError)
+	// レスポンスに書き込む
+	w.Header().Add("X-Cache", "Miss")
+	w.Header().Add("X-NCDN-Shield-NodeId", res.Header.Get("X-NCDN-Shield-NodeId"))
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
 }
 

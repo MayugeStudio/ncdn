@@ -106,6 +106,7 @@ func (s *Shield) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err != nil {
+			log.Printf("failed to fetch data: %s", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
