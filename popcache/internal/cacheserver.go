@@ -43,15 +43,15 @@ func Fetch(ctx context.Context, dest string, port string, r *http.Request, t *ht
 type CacheServer struct {
 	nodeId    string
 	cache     *Cache
-	origins   map[string]*types.Upstream // Hostname -> Origin
-	shields   []*types.Upstream // Hostname -> Shield
+	origins   map[string]*types.Backend // Hostname -> Origin
+	shields   []*types.Backend // Hostname -> Shield
 	transport *http.Transport
 }
 
-func NewCacheServer(nodeId string, origins []*types.Upstream, shields []*types.Upstream, transport *http.Transport) *CacheServer {
+func NewCacheServer(nodeId string, origins []*types.Backend, shields []*types.Backend, transport *http.Transport) *CacheServer {
 	cache := NewCache(256)
 	
-	originMap := make(map[string]*types.Upstream)
+	originMap := make(map[string]*types.Backend)
 	for _, origin := range origins {
 		originMap[origin.Hostname] = origin
 	}

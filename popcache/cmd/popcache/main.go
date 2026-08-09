@@ -20,11 +20,11 @@ var nodeId = flag.String("nodeId", "unknown_node", "Name of the node")
 func main() {
 	flag.Parse()
 
-	origins, err := internal.ParseUpstreams(*originConfigPath)
+	origins, err := internal.ParseBackends(*originConfigPath)
 	if err != nil {
 		log.Fatalf("Failed to parse configurations: %v", err)
 	}
-	shields, err := internal.ParseUpstreams(*shieldConfigPath)
+	shields, err := internal.ParseBackends(*shieldConfigPath)
 	if err != nil {
 		log.Fatalf("Failed to parse configurations: %v", err)
 	}

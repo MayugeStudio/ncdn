@@ -22,17 +22,17 @@ var g singleflight.Group
 type Shield struct {
 	nodeId    string
 	cache     *lru.Cache[[32]byte, *types.CacheEntry]
-	origins   map[string]*types.Upstream
+	origins   map[string]*types.Backend
 	transport *http.Transport
 }
 
-func NewShield(nodeId string, origins []*types.Upstream, transport *http.Transport) *Shield {
+func NewShield(nodeId string, origins []*types.Backend, transport *http.Transport) *Shield {
 	cache, err := lru.New[[32]byte, *types.CacheEntry](256)
 	if err != nil {
 		log.Fatalf("Failed to create lru.Cache: %v", err)
 	}
 
-	originMap := make(map[string]*types.Upstream)
+	originMap := make(map[string]*types.Backend)
 	for _, origin := range origins {
 		originMap[origin.Hostname] = origin
 	}
@@ -132,7 +132,7 @@ var nodeId = flag.String("nodeId", "unknown_node", "Name of the node")
 func main() {
 	flag.Parse()
 
-	origins, err := internal.ParseUpstreams(*originConfigPath)
+	origins, err := internal.ParseBackends(*originConfigPath)
 	if err != nil {
 		log.Fatalf("Failed to parse configurations: %v", err)
 	}

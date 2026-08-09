@@ -12,7 +12,7 @@ import (
 	"github.com/yzp0n/ncdn/types"
 )
 
-func ParseUpstreams(configPath string) ([]*types.Upstream, error) {
+func ParseBackends(configPath string) ([]*types.Backend, error) {
 	f, err := os.Open(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configs from %s", configPath)
@@ -29,7 +29,7 @@ func ParseUpstreams(configPath string) ([]*types.Upstream, error) {
 		return nil, fmt.Errorf("failed to parse configs %s: %w", configPath, err)
 	}
 
-	out := []*types.Upstream{}
+	out := []*types.Backend{}
 	for i := range data {
 		ip4 := netip.MustParseAddr(data[i].Ip4)
 		hostname := strings.ToLower(data[i].Hostname)
@@ -38,7 +38,7 @@ func ParseUpstreams(configPath string) ([]*types.Upstream, error) {
 		if err != nil {
 			log.Fatalf("Failed to parse url: %s\n", urlStr)
 		}
-		out = append(out, &types.Upstream{
+		out = append(out, &types.Backend{
 			Ip4: ip4,
 			Hostname: hostname,
 			Port: data[i].Port,

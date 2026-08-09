@@ -72,7 +72,7 @@ func (c *CacheEntry) Clone() *CacheEntry {
 	}
 }
 
-type Upstream struct {
+type Backend struct {
 	NodeId   string
 	Ip4      netip.Addr
 	Hostname string
