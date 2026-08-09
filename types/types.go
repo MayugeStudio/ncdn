@@ -60,15 +60,14 @@ type ProbeResult struct {
 	ResponseCode int    `json:"response_code"`
 }
 
-// TODO: 名前変更
-type CacheEntry struct {
+type Object struct {
 	StatusCode int
 	Header     http.Header
 	Body       []byte // Bodyをio.Reader的な感じのやつにしてもいいかも何回も読めるやつ
 }
 
-func (c *CacheEntry) Clone() *CacheEntry {
-	return &CacheEntry{
+func (c *Object) Clone() *Object {
+	return &Object{
 		StatusCode: c.StatusCode,
 		Header:     c.Header.Clone(),
 		Body:       bytes.Clone(c.Body),

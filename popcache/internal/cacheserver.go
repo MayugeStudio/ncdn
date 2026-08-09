@@ -41,7 +41,7 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	
 
-	ce, err := CacheAndFetch(c.roundTripper, r, c.cache)
+	obj, err := CacheAndFetch(c.roundTripper, r, c.cache)
 	if err != nil {
 		log.Printf("CacheAndFetch failed: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -49,12 +49,12 @@ func (c *CacheServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ヘッダに書き込み
-	for k, vs := range ce.Header {
+	for k, vs := range obj.Header {
 		for _, v := range vs {
 			w.Header().Add(k, v)
 		}
 	}
-	w.WriteHeader(ce.StatusCode)
-	w.Write(ce.Body)
+	w.WriteHeader(obj.StatusCode)
+	w.Write(obj.Body)
 	return
 }

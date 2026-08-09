@@ -25,13 +25,13 @@ func CacheKey(r *http.Request) [32]byte {
 }
 
 // TODO: Fresh Stale Missを返す関数を定義する
-func CacheAndFetch(next http.RoundTripper, r *http.Request, cache *Cache) (*types.CacheEntry, error) {
+func CacheAndFetch(next http.RoundTripper, r *http.Request, cache *Cache) (*types.Object, error) {
 	key := CacheKey(r)
-	ce, ok := cache.Get(key)
+	obj, ok := cache.Get(key)
 	if ok /* キャッシュヒット */ {
 		log.Printf("Cache HIT: (%s:%s%s)\n", r.Host, r.URL.Port(), r.URL.RequestURI())
-		ce.Header.Set("X-Cache", "HIT")
-		return ce, nil
+		obj.Header.Set("X-Cache", "HIT")
+		return obj, nil
 	}
 
 	/* キャッシュミス */
@@ -51,16 +51,16 @@ func CacheAndFetch(next http.RoundTripper, r *http.Request, cache *Cache) (*type
 		return nil, err
 	}
 
-	// TODO: CacheEntryではなく別の名前に変更する
-	newCacheEntry := &types.CacheEntry{
+	// TODO: Objectではなく別の名前に変更する
+	newObject := &types.Object{
 		StatusCode: resp.StatusCode,
 		Header:     cacheHeader,
 		Body:       body,
 	}
-	cache.Put(key, newCacheEntry)
+	cache.Put(key, newObject)
 
-	newCacheEntry.Header.Add("X-Cache", "Miss")
-	return newCacheEntry, nil
+	newObject.Header.Add("X-Cache", "Miss")
+	return newObject, nil
 }
 
 type RoundTripperFunc func(r *http.Request) (*http.Response, error)

@@ -10,11 +10,11 @@ import (
 type Key [32]byte
 
 type Cache struct {
-	cache *lru.Cache[Key, *types.CacheEntry]
+	cache *lru.Cache[Key, *types.Object]
 }
 
 func NewCache(cap int) *Cache {
-	cache, err := lru.New[Key, *types.CacheEntry](256)
+	cache, err := lru.New[Key, *types.Object](256)
 	if err != nil {
 		log.Fatalf("Failed to create lru.Cache: %v", err)
 	}
@@ -23,14 +23,14 @@ func NewCache(cap int) *Cache {
 	}
 }
 
-func (c *Cache) Get(key Key) (*types.CacheEntry, bool) {
-	ce, ok := c.cache.Get(key)
+func (c *Cache) Get(key Key) (*types.Object, bool) {
+	obj, ok := c.cache.Get(key)
 	if !ok {
 		return nil, false
 	}
-	return ce.Clone(), true
+	return obj.Clone(), true
 }
 
-func (c *Cache) Put(key Key, ce *types.CacheEntry) {
-	c.cache.Add(key, ce)
+func (c *Cache) Put(key Key, obj *types.Object) {
+	c.cache.Add(key, obj)
 }
