@@ -23,6 +23,17 @@ func RemovePortFromHost(hostname string) string {
 	return outHost
 }
 
+type Node struct {
+		NodeId   string `yaml:"nodeId"`
+		Ip4      string `yaml:"ip4"`
+		Hostname string `yaml:"hostname"`
+		Port     string `yaml:"openPort"`
+}
+
+type Config struct {
+	Nodes []Node `yaml:"nodes"`
+}
+
 func ParseBackends(configPath string, transport *http.Transport) ([]*Backend, error) {
 	f, err := os.Open(configPath)
 	if err != nil {
@@ -30,36 +41,31 @@ func ParseBackends(configPath string, transport *http.Transport) ([]*Backend, er
 	}
 	defer f.Close()
 
-	data := []struct {
-		NodeId   string `yaml:"nodeId"`
-		Ip4      string `yaml:"ip4"`
-		Hostname string `yaml:"hostname"`
-		Port     string `yaml:"openPort"`
-	}{}
+	var cfg Config
 
-	if err := yaml.NewDecoder(f).Decode(&data); err != nil {
+	if err := yaml.NewDecoder(f).Decode(&cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse configs %s: %w", configPath, err)
 	}
 
 	out := []*Backend{}
-	for i := range data {
-		ip4, err := netip.ParseAddr(data[i].Ip4)
+	for i := range cfg.Nodes  {
+		ip4, err := netip.ParseAddr(cfg.Nodes[i].Ip4)
 		if err != nil {
-			log.Printf("Failed to parse address: %s\n", data[i].Ip4)
+			log.Printf("Failed to parse address: %s\n", cfg.Nodes[i].Ip4)
 			return nil, err
 		}
-		hostname := strings.ToLower(data[i].Hostname)
-		urlStr := "http://" + data[i].Ip4 + ":" + data[i].Port
+		hostname := strings.ToLower(cfg.Nodes[i].Hostname)
+		urlStr := "http://" + cfg.Nodes[i].Ip4 + ":" + cfg.Nodes[i].Port
 		u, err := url.Parse(urlStr)
 		if err != nil {
 			log.Printf("Failed to parse url: %s\n", urlStr)
 			return nil, err
 		}
 		out = append(out, &Backend{
-			NodeId:    data[i].NodeId,
+			NodeId:    cfg.Nodes[i].NodeId,
 			Ip4:       ip4,
 			Hostname:  hostname,
-			Port:      data[i].Port,
+			Port:      cfg.Nodes[i].Port,
 			Url:       u,
 			Transport: transport,
 		})

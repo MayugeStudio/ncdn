@@ -1,12 +1,13 @@
-- nodeId: C0
-  ip4: 192.168.88.10
-  hostname: c0.node.test
-  openPort: "8889"
-- nodeId: C1
-  ip4: 192.168.88.11
-  hostname: c1.node.test
-  openPort: "8889"
-- nodeId: C2
-  ip4: 192.168.88.12
-  hostname: c2.node.test
-  openPort: "8889"
+nodes:
+  - nodeId: C0
+    ip4: 192.168.88.10
+    hostname: c0.node.test
+    openPort: "8889"
+  - nodeId: C1
+    ip4: 192.168.88.11
+    hostname: c1.node.test
+    openPort: "8889"
+  - nodeId: C2
+    ip4: 192.168.88.12
+    hostname: c2.node.test
+    openPort: "8889"
