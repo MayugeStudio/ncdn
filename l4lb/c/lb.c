@@ -166,7 +166,7 @@ int lb_main(struct xdp_md* ctx) {
 
   struct tcphdr* tcp = (struct tcphdr*)(ip + 1);
 
-  if (tcp.th_dport == htons(22)) {
+  if (tcp->th_dport == htons(22)) {
     EXIT(XDP_PASS);
   }
 
