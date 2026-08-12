@@ -44,6 +44,10 @@ type L4LB struct {
 }
 
 func New(cfg *Config) (*L4LB, error) {
+	if len(cfg.Dests) < 2 {
+		return nil, fmt.Errorf("Dests must have at least 2 entries (Dests[0] is the l4lb itself), but got %d", len(cfg.Dests))
+	}
+
 	if err := PrepSystemForXDP(); err != nil {
 		return nil, fmt.Errorf("Failed to prep system for XDP: %w", err)
 	}
